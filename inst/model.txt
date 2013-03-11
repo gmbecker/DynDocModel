@@ -1,0 +1,13 @@
+Documents contain one or more nested structural elements which define/contain the content of the document. 
+
+Each type of element will be represented by an object class, with useful class inheritance and parent/child relationships defined.
+
+basic structural/content elements: text element (subclasses for markedup rich text eg markdown, docbook, latex?), code element (subclasses for each language), output element (metadata for caching info)
+
+Complex structural elements: Task (contains a set of elements which perform and discuss a particular conceptual task, eg PCA transformation, digit prediction, etc. Tasks can be nested), branching elements (alternate implementatin, alternate method, alternate language, alternate question, etc subclasses)
+
+A Path (thread) through such a document will be defined as a path through the network described by the parent/sibling/child relationships of the elements starting at the root element of the document. Conceptually Paths will create linear views of the document corresponding to a specific set of choices at the branching elements, and resulting in a linear subdocument.
+
+I think we want to be more general than this about paths/views. Consider a document with both alternative methods and alternative implementations for those methods within a particular task. One useful view would be to compare the methods side-by-side, while collapsing the implementation choices, while another would be selecting a particular method and comparing the implementations for it side-by-side. Both of these can be thought of as generalized paths through the document, but neither result in linear subdocuments
+
+Documents will be queriable, annotatable, and alterable programmatically using the functions defined in this model/package

@@ -3,3 +3,5 @@ How do we relate code to its output?
     Should the code element be the parent of its output element(s), or should they be siblings with pointers between code and output?
 
 Is having the concept of a document Root element important, or can DynDoc objects contain their elements directly?
+
+Should headers be mapped as single header elements, or used to create section elements by inferring section breaks at headers?

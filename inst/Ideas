@@ -1,1 +1,13 @@
-Formalized remote alternatives (RemoteAlternateImpl or AlternateImplRef class)
+Formalized remote alternative Elements (RemoteAlternateImpl or AlternateImplRef class)
+
+	   This would be when we are offering an additional alternative to or retrieving an additional element from an external document
+
+Also, formalized remote "Extension"/"FurtherDiscussion" Element classes
+	   This would be a formal mechanism for saying that a thread/element/document is an extension or further discussion of (Some or all) content in another external document
+
+	   In particular this would allow teacher to do the type of annotations, etc Duncan and Deb have talked about without needing to own the document.
+
+	   Furthermore, it could be useful to look at/compare different extensions of the same document.
+
+These types of things will require a way to specify a way of selecting/pointing at elements/subdocuments within our Dynamic Documents (xpath/xpointer analogue)
+      Implementation detail: I think having the more general conceptual model is useful, but we could still be storing these documents internally as XML. That gives us xpath/xpointer for free.

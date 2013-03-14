@@ -1,4 +1,5 @@
-setClass("ElementList", contains = "list")
+setClass("ElementList", contains="list")
+
 setClassUnion("ListOrNull", members = c("list", "NULL"))
 dynDoc = setRefClass("DynDoc", fields = list(
                                  elements = "ElementList",
@@ -7,21 +8,48 @@ dynDoc = setRefClass("DynDoc", fields = list(
   methods = list(
     addChild = function(newel)
     {
-      elements[length(elements)+1] <<- newel
+      newpos = length(elements)+1
+      newel$posInParent = newpos
+      elements[[newpos]] <<- newel
+    },
+    insertChildren = function(elList, startPos)
+    {
+      browser()
+      if (is(elList, "DocElement"))
+        elList = as(list(elList), "ElementList")
+      
+      if(startPos > length(elements))
+        return(sapply(elList, function(el) .self$addChild(el)))
+      afterinds = seq(startPos, length(elements))
+      elsafter = elements[afterinds]
+      elsbefore = elements[-afterinds]
+      elements <<- as(c(elsbefore, elList, elsafter), "ElementList")
+      sapply(seq(startPos, length(elements)), function(i) elements[[i]]$posInParent = i)
+      
+    },
+    removeChild = function(oldel)
+    {
+      elements <<- elements[-oldel$posInParent]
+      oldel$parent = NULL
+      oldel$posInParent = 0
     })
   )
 
 docElement = setRefClass("DocElement", fields = list(
                                          parent = "ANY",
                                          metadata = "ListOrNull",
-                                         formatSpecific = "ListOrNull"))
+                                         formatSpecific = "ListOrNull",
+                                         posInParent = "numeric",
+                                         id = "character"))
 
 containerElement = setRefClass("ContainerElement", contains = "DocElement",
   fields = list(children = "ElementList"),
   methods = list(
     addChild = function(newel)
     {
-      children[length(children) + 1] <<- newel
+      newpos = length(children) + 1
+      newel$posInParent = newpos
+      children[[newpos]] <<- newel
     })
   )
 taskElement = setRefClass("TaskElement", contains = "ContainerElement")

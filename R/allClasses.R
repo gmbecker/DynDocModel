@@ -14,7 +14,6 @@ dynDoc = setRefClass("DynDoc", fields = list(
     },
     insertChildren = function(elList, startPos)
     {
-      browser()
       if (is(elList, "DocElement"))
         elList = as(list(elList), "ElementList")
       

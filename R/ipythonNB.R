@@ -56,7 +56,8 @@ codeToCodeEl = function(code, parent)
   {
     content = code$input
     language = code$language
-    formatSpecific = code[!grepl("(input|outputs|language)", names(code))]
+    #formatSpecific = code[!grepl("(input|outputs|language)", names(code))]
+    formatSpecific = code[!grepl("(input|outputs)", names(code))]
     constructor = switch(language,
            python = pyCodeElement$new,
            stop(paste("Unrecognised language:", language))
@@ -75,6 +76,88 @@ outToOutputEl = function(outel, code, parent)
     formatSpecific = outel[!grepl("(text|output_type|metadata)", names(outel))]
     outputElement$new(codeElement = code, parent = parent, content = content, format = format, metadata = metadata, formatSpecific = formatSpecific)
   }
+
+
+writeIPyNB = function(doc, file = NULL)
+  {
+    if(!is.null(doc$formatSpecific))
+      listout = do.call(list, doc$formatSpecific)
+    else
+      listout=list()
+    
+    listout$metadata = doc$metadata
+
+    #not handling metadata on worksheets right now.
+    listout$worksheets = list(list(cells = lapply(doc$elements, writeIPyNode)))
+
+    json = toJSON(listout)
+    if(!is.null(file))
+      cat(json, file=file)
+    else
+      json
+    
+  }
+
+setGeneric("writeIPyNode", function(node) standardGeneric("writeIPyNode"))
+setMethod("writeIPyNode", "CodeElement",
+          function(node)
+          {
+            #includes language
+            if(!is.null(node$formatSpecific))
+              listout = do.call(list, node$formatSpecific)
+            else
+              listout=list()
+  
+
+            listout$metadata = node$metadata
+            
+            listout$cell_type = "code"
+            listout$input = node$content
+            listout$outputs = lapply(node$outputs, writeIPyNode)
+            listout
+          })
+
+setMethod("writeIPyNode", "OutputElement",
+          function(node)
+          {
+
+            if(!is.null(node$formatSpecific))
+              listout = do.call(list, node$formatSpecific)
+            else
+              listout=list()
+            listout$metadata = node$metadata
+            listout$cell_type="output"
+            listout$output_type = node$format
+            listout$text = node$content
+            listout
+          })
+setMethod("writeIPyNode", "TextElement",
+          function(node)
+          {
+
+            if(!is.null(node$formatSpecific))
+              listout = do.call(list, node$formatSpecific)
+            else
+              listout=list()
+            
+            listout$metadata = node$metadata
+            listout$cell_type = if(is(node, "MDTextElement")) "markdown" else "raw"
+            listout$source = node$content
+            listout
+          })
+
+setMethod("writeIPyNode", "TaskElement",
+          function(node)
+          {
+            if(!is.null(node$formatSpecific))
+              listout = do.call(list, node$formatSpecific)
+            else
+              listout=list()
+            listout$metadata = node$metadata
+            listout$cell_type = "task"
+            listout$cells = lapply(node$children, writeIPyNode)
+            listout
+          })
 
 
 #fromJSON("~/gabe/checkedout/ipython/notebook.ipynb", function(...) browser()

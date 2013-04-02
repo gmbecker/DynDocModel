@@ -1,0 +1,33 @@
+Here I describe existing methods for querying/specifying subportions of documents and how they compare to what we want.
+
+     XPath
+	XML based. Entirely general (search for any tag, any attribute, any defined structure).
+	This is probably more general than we actually need 
+	Existing robust tools, both in general and within R, to perform xpath queries on XML documents
+
+     Org-mode Agenda
+     	Emacs org-mode based.
+	See http://orgmode.org/worg/org-tutorials/advanced-searching.html
+	Focused on specific types of elements (org-mode has a defined set of valid entities). 
+	Can search both tags and metadata, but I'm not sure if it can handle complex structure (all TODO elements within headlines which are in headlines with particular metadata)
+	I don't believe this is implemented outside of Emacs
+	The main purpose of this is to construct an agenda, ie list of things that need to be done by finding all entries that match certain criteria.
+	    Focused on metadata, "tag" type, and timestamp.
+	    
+     JQuery
+	JSON/Javascript object based.
+	Seems to be solely for HTML traversal/querying/modification
+	Iterative selectors (allows complex structure). 
+	Based on tag or metadata (class, id, etc)
+	Each selection step returns a set of one or more elements, which can then be further selected on, or iterated through.
+
+     knitr
+	knitr documents are not queriable in the normal sense.
+	Technically there is an internal representation of the document during the knitting process, but this is never exposed.
+		The best way to see this is XXX fix this:
+		    trace(knitr:::process_file, browser, at=3)
+		    knit(system.file("examples/knit-minimal.Rmd", package="knitr"))
+		    groups
+		A major issue here is that knitr seems to rely on options extremely heavily. This makes leveraging its internal functions directly difficult (though not impossible), as they expect these options to have already been set within a top-level function (eg knit)
+	"Querying" of the document in this case would consist of using regular expressions on the raw text input and adding/removing lines
+		See split_file() in parser.R for logic to do this. It does this when creating the (inaccessable) internal representation. 

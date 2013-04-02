@@ -112,7 +112,7 @@ setMethod("writeIPyNode", "CodeElement",
             listout$metadata = node$metadata
             
             listout$cell_type = "code"
-            listout$input = node$content
+            listout$input = paste(node$content, collapse="")
             listout$outputs = lapply(node$outputs, writeIPyNode)
             listout
           })
@@ -128,7 +128,7 @@ setMethod("writeIPyNode", "OutputElement",
             listout$metadata = node$metadata
             listout$cell_type="output"
             listout$output_type = node$format
-            listout$text = node$content
+            listout$text = paste(node$content, collapse="")
             listout
           })
 setMethod("writeIPyNode", "TextElement",
@@ -142,7 +142,7 @@ setMethod("writeIPyNode", "TextElement",
             
             listout$metadata = node$metadata
             listout$cell_type = if(is(node, "MDTextElement")) "markdown" else "raw"
-            listout$source = node$content
+            listout$source = paste(node$content, collapse="\n")
             listout
           })
 

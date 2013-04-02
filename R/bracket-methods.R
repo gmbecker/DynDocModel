@@ -9,6 +9,8 @@ setMethod("[[<-", "DynDoc",
           function(x, i, ..., value)
           {
             x$elements[[i,...]] = value
+            value$posInParent = i
+            value$parent = x
             x
           })
 
@@ -38,6 +40,8 @@ setMethod("[[<-", "ContainerElement",
           function(x, i, ..., value)
           {
             x$elements[[i,...]] = value
+            value$posInParent = i
+            value$parent = x
             x
           })
 

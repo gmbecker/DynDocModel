@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<article xmlns="http://docbook.org/ns/docbook" version="5.0" xml:lang="en"
+	 xmlns:r="http://www.r-project.org"
+	 xmlns:py="http://www.python.org"
+	 xmlns:ipy="http://www.ipython.org"
+	 
+	 xmlns:js="http://www.ecma-international.org/publications/standards/Ecma-262.htm">
+<info>
+  <title>Thoughts on Caching</title>
+</info>
+<sect1>
+  <title>Existing Approaches</title>
+  <para>
+    Existing approaches to caching in reproducible research documents (particularly in R eg sweave, knitr) seem to focus on changes to the text of a code block. They are unable to see where changes to previous code blocks will change the output of a piece of code.
+</sect1>
+<sect1>
+  <title>What We Want</title>
+  <para>
+    We want a caching mechanism which takes into account dependencies between code blocks/branches to get a more realistic way of knowing when to re-evaluate code. We will do this using CodeDepends in R.
+  </para>
+  <para>
+    In ipython notebook we can achieve this by extending the rmagic, eg
+    <ipy:code>
+      %%Rcache -in x y z -out w k -name cached1
+      w = x+y + z
+      k = mean(w)
+    </ipy:code>
+    This would specify that the codeblock is dependant on existing <r/> variables x, y, and z, and it generates output variables w and k. Thus to see whether the code needs to be rerun we would check if: 
+    <itemizedlist>
+      <listitem>The code has changed (after parsing so we can avoid the whitespace silliness present in other cachers)</listitem>
+      <listitem>The value(s) of x,y, or z have changed</listitem>
+    </itemizedlist>
+  </para>
+  <para>
+    Eventually we would use CodeDepends to automate the detection of the inputs and outputs. CodeDepends can already do this now on individual code blocks/tasks, so we would just write some wrapper logic so that we can annotate a DynDoc object with a simple function call
+    <r:code>
+      addCaching(mydoc)
+    </r:code>
+    We could also add caching to individual element(s) in the document
+    <r:code>
+      addCaching(mydoc[c(2, 5, 7)])
+    </r:code>
+  </para>
+  <para>
+    The other big thing we want to make sure works with caching is the concept of branching documents. That is, if I have a set of Alternate Implementations, and I alter a variable in one of the branches, this should not invalidate any caches on the other branch which rely on a variable of he same name. Part of this issue is the concept of running an individual cell only sort-of makes sense in the context of this type of caching. Really what you want to do is update a cell, which requires running up to that cell. That said, with scoping/environments in <r/> its pretty easy to protect against this type of thing. I'm not sure how we will do so in python/ipython.
+  </para>
+</sect1>
+<sect1>
+  <title>How We Get It</title>
+</sect1>
+</article>

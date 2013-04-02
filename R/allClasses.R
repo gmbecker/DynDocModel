@@ -2,7 +2,26 @@ setClass("ElementList", contains="list")
 
 setClassUnion("ListOrNull", members = c("list", "NULL"))
 dynDoc = setRefClass("DynDoc", fields = list(
-                                 elements = "ElementList",
+                                 .elements = "ElementList",
+                                 elements = function(value)
+                                 {
+                                   if(missing(value))
+                                     .elements
+                                   else
+                                     {
+                                       if(is(value, "DocElement"))
+                                         value = as(list(value), "ElementList")
+                                       value = as(sapply(seq(along = value), function(i)
+                                              {
+                                                el = value[[i]]
+                                                el$parent = .self
+                                                el$posInParent = i
+                                                el
+                                              }), "ElementList")
+                                       .elements <<- value
+                                       
+                                     }
+                                 },
                                  metadata = "ListOrNull",
                                  formatSpecific = "ListOrNull"),
   methods = list(
@@ -10,21 +29,25 @@ dynDoc = setRefClass("DynDoc", fields = list(
     {
       newpos = length(elements)+1
       newel$posInParent = newpos
+      newel$parent = .self
       elements[[newpos]] <<- newel
+      newel
     },
     insertChildren = function(elList, startPos)
     {
       if (is(elList, "DocElement"))
         elList = as(list(elList), "ElementList")
-      
+
+      if(!is(elList, "ElementList"))
+        stop("elList does not seem to be an ElementList. Unable to insert children")
       if(startPos > length(elements))
         return(sapply(elList, function(el) .self$addChild(el)))
       afterinds = seq(startPos, length(elements))
       elsafter = elements[afterinds]
       elsbefore = elements[-afterinds]
-      elements <<- as(c(elsbefore, elList, elsafter), "ElementList")
-      sapply(seq(startPos, length(elements)), function(i) elements[[i]]$posInParent = i)
-      
+      .self$elements = as(c(elsbefore, elList, elsafter), "ElementList")
+      #parent/child stuff taken care off in field assignment
+     
     },
     removeChild = function(oldel)
     {
@@ -42,13 +65,51 @@ docElement = setRefClass("DocElement", fields = list(
                                          id = "character"))
 
 containerElement = setRefClass("ContainerElement", contains = "DocElement",
-  fields = list(children = "ElementList"),
+  fields = list(.children = "ElementList",
+    children = function(value)
+    {
+      if(missing(value))
+        .children
+      else
+        {
+          if(is(value, "DocElement"))
+            value = as(list(value), "ElementList")
+          value = as(sapply(seq(along = value), function(i)
+                                              {
+                                                el = value[[i]]
+                                                el$parent = .self
+                                                el$posInParent = i
+                                                el
+                                              }), "ElementList")
+          .children <<- value
+          
+        }
+    }
+    ),
   methods = list(
     addChild = function(newel)
     {
       newpos = length(children) + 1
       newel$posInParent = newpos
+      newel$parent = .self
       children[[newpos]] <<- newel
+      newel
+    },
+    insertChildren = function(elList, startPos)
+    {
+      if (is(elList, "DocElement"))
+        elList = as(list(elList), "ElementList")
+
+      if(!is(elList, "ElementList"))
+        stop("elList does not seem to be an ElementList. Unable to insert children")
+      if(startPos > length(children))
+        return(sapply(elList, function(el) .self$addChild(el)))
+      afterinds = seq(startPos, length(children))
+      elsafter = children[afterinds]
+      elsbefore = children[-afterinds]
+      .self$children = as(c(elsbefore, elList, elsafter), "ElementList")
+      #parent child stuff is now taken care of in activeBinding methods on the fields themselves.
+      
     })
   )
 taskElement = setRefClass("TaskElement", contains = "ContainerElement")
@@ -77,10 +138,14 @@ dbElement = setRefClass("DbTextElement", contains="TextElement")
 
 branchElement = setRefClass("BranchElement", contains = "ContainerElement")
 
+branchSetElement = setRefClass("BranchSetElement", contains = "ContainerElement")
 altImplElement = setRefClass("AltImplElement", contains = "BranchElement")
+altImplSetElement = setRefClass("AltImplSetElement", contains = "BranchSetElement")
 
 altMethodElement = setRefClass("AltMethodElement", contains = "BranchElement")
-
+altMethodSetElement = setRefClass("AltMethodSetElement", contains = "BranchSetElement")
 altQuestElement = setRefClass("AltQuestElement", contains = "BranchElement")
+altQuestSetElement = setRefClass("AltQuestSetElement", contains = "BranchSetElement")
 
 sectElement = setRefClass("SectionElement", contains = "BranchElement")
+ 

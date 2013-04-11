@@ -1,3 +1,38 @@
+
+What we want to do:
+     See http://www.w3.org/1999/10/xquery-tree.html
+
+     I think there are 3 things we want to be able to specify for any single subquery:
+       Starting point (either root or specific node)
+       What nodes to consider (all nodes under starting point, or only direct children)
+       Identifying information for the nodes we want to find (type, attributes, position, or a filtering function which returns TRUE/FALSE)
+     
+     A query would then be made up of one or more subqueries that "walk down the tree" 
+
+     A first pass will just be to implement a subquery function which can do this. We can decide on a language to describe queries and write code to parse that into one or more subquery calls later
+
+     Eg:
+	subquery = function(start, type = NULL, attrs, position = NULL, all.descendents = FALSE, fun = NULL) {...}
+	subquery(mydoc, "code", allDescendents = TRUE) ##gets all code nodes anywhere in the document (//r:code||//py:code)
+	subquery(subquery(mydoc, "task"), "text") ## Gets all text elements which are direct children of top level tasks (/task//(text|markdown|docbook|latex))
+	In the PoC in the package, filters are applied in the following order:
+	   If fun is non-null, it is applied and nodes for which it returns true are defined as the result set position filtering is apply, but type/attribute filtering is not (assumed to be perfomed in the function)
+
+	   If fun is NULL, filters are applied
+	      type first (selects type of node, abbreviations are allowed, see doAbbrevType in querying.R)
+	      attr second (checks for equality in attributes, more nuanced approaches, eg value in attribute which is a list/vector need to be done via functions currently)
+	      position third (subsets the result set, ie I want the third text element that meets my other criteria)
+
+	If all.descendents is TRUE, subquery is called again on the set of children for the start node, and those results is added to the result set as calculated above
+	   This uses recursion to traverse the whole (sub)tree
+	   This results in a search order that is NOT depth-first OR breadth-first! Boo!! :(
+	   This is not efficient (certain queries will cause some nodes to be looked at multiple times), just intended to get querying working so I can use it while we decide on a more permanent solution
+	   This happens BEFORE position filtering is applied, so position refers to position in the result set after all descendents have been checked if applicatable
+	
+
+
+
+
 Here I describe existing methods for querying/specifying subportions of documents and how they compare to what we want.
 
      XPath
@@ -31,3 +66,5 @@ Here I describe existing methods for querying/specifying subportions of document
 		A major issue here is that knitr seems to rely on options extremely heavily. This makes leveraging its internal functions directly difficult (though not impossible), as they expect these options to have already been set within a top-level function (eg knit)
 	"Querying" of the document in this case would consist of using regular expressions on the raw text input and adding/removing lines
 		See split_file() in parser.R for logic to do this. It does this when creating the (inaccessable) internal representation. 
+
+

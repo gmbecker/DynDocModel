@@ -13,4 +13,4 @@ res = writeIPyNB(ipn)
 ##test alternatives
 
 makeAltImplSet(ipn[2:4], ipn[5:7])
-
+writeIPyNB(ipn, file="~/gabe/checkedout/ipython/withalts.ipynb")

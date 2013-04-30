@@ -44,3 +44,12 @@ makeOneAltImpl = function(ellist)
     newalt
 
   }
+
+
+collapseAltImplSet = function(altset)
+  {
+    parent = altset$parent
+    gkids = as(unlist(lapply(altset$children, function(el) el$children), recursive=FALSE), "ElementList")
+    pos = altset$posInParent
+    parent$insertChildren(gkids, pos)
+  }

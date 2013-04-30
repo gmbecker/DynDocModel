@@ -1,6 +1,23 @@
 setClass("ElementList", contains="list")
-
 setClassUnion("ListOrNull", members = c("list", "NULL"))
+
+setClass("WidgetsList", contains="list")
+setClass("IWidget", representation(var = "character",
+ #I think we want to specify widget by class, but I'll leave this here for custom widgets?
+                                   widget = "character",
+                                   linenum = "integer",
+                                   default = "ANY",
+                                   additional.info = "list"))
+
+setClass("IWidgetSlider", representation(range = "numeric",
+                                         step = "numeric"),
+         contains = "IWidget")
+
+
+setClass("IWidgetTextbox", contains = "IWidget")
+setClass("IWidgetIntTextbox", contains = "IWidgetTextbox")
+setClass("IWidgetNumTextbox", contains = "IWidgetTextbox")
+
 dynDoc = setRefClass("DynDoc", fields = list(
                                  .elements = "ElementList",
                                  elements = function(value)
@@ -121,6 +138,24 @@ codeElement = setRefClass("CodeElement", contains = "DocElement",
 rCodeElement = setRefClass("RCodeElement", contains = "CodeElement")
 
 pyCodeElement = setRefClass("PyCodeElement", contains = "CodeElement")
+
+intCodeElement = setRefClass("IntCodeElement", contains = "CodeElement",
+  fields = list(widgets = function(val)
+    {
+      if(missing(val))
+        .widgets
+      else
+        {
+          if(is(val, "IWidget"))
+            val = list(val)
+          .widgets <<- val
+          }
+      },
+    .widgets = "WidgetsList"))
+
+intRCodeElement = setRefClass("IntRCodeElement", contains = c("IntCodeElement", "RCodeElement"))
+
+intPyCodeElement = setRefClass("IntPyCodeElement", contains = c("IntCodeElement", "PyCodeElement"))
 
 outputElement = setRefClass("OutputElement", contains = "DocElement",
   fields = list(

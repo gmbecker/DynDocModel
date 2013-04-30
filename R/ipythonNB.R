@@ -18,7 +18,7 @@ processEl = function(el, parent= NULL)
            "markdown" = mdElFromIPN(el, parent),
            "raw" = textElFromIPN(el, parent),
            "heading" = , # not sure what to do about this yet sections?
-           "output" = outputElFromIPN(el, parent),
+           #This happens in the code, not independently "output" = outputElFromIPN(el, parent),
            stop(paste("Unrecognized cell_type:", el$cell_type))
            )
     parent
@@ -56,10 +56,25 @@ codeToCodeEl = function(code, parent)
   {
     content = code$input
     language = code$language
-    #formatSpecific = code[!grepl("(input|outputs|language)", names(code))]
     formatSpecific = code[!grepl("(input|outputs)", names(code))]
+    if(language == "python" && length(grep("%%R", content)))
+      {
+        #TODO: need to deal with arguments passed to the rmagic eg push pull etc
+        #the first line is the %%R... we need to keep this around so we can put it back, but it shouldn't be in the content(code) for the RCodeElement object
+        #formatSpecific$rmagicLine = content[1]
+        #content = content[-1]
+        #don't include \\n
+        formatSpecific$rmagicLine = gsub("(%%R[^\\n]*)\\n.*", "\\1", content)
+        #do include \\n
+        content = gsub("%%R[^\\n]*\\n", "", content)
+        language = "R"
+      }
+        
+                                        #formatSpecific = code[!grepl("(input|outputs|language)", names(code))]
+    
     constructor = switch(language,
            python = pyCodeElement$new,
+           R = rCodeElement$new,
            stop(paste("Unrecognised language:", language))
            )
     
@@ -80,6 +95,7 @@ outToOutputEl = function(outel, code, parent)
 
 writeIPyNB = function(doc, file = NULL)
   {
+    
     if(!is.null(doc$formatSpecific))
       listout = do.call(list, doc$formatSpecific)
     else
@@ -102,9 +118,24 @@ setGeneric("writeIPyNode", function(node) standardGeneric("writeIPyNode"))
 setMethod("writeIPyNode", "CodeElement",
           function(node)
           {
-            #includes language
-            if(!is.null(node$formatSpecific))
-              listout = do.call(list, node$formatSpecific)
+ 
+            input = node$content
+            formspec = node$formatSpecific
+            ##TODO: someday thsi will involve changing the language element to R instead of adding the rmagic in the ipynb node, but not yet
+            magic = NULL
+            if(is(node, "RCodeElement"))
+              {
+                if(is.null(formspec) || is.null(formspec$rmagicLine))
+                  magic = "%%R"
+                else
+                  {
+                    magic = formspec$rmagicLine
+                    formspec = formspec[-grep("magic", names(formspec))]
+                  }
+             }
+           #includes language
+            if(!is.null(formspec))
+              listout = do.call(list, formspec)
             else
               listout=list()
   
@@ -112,7 +143,7 @@ setMethod("writeIPyNode", "CodeElement",
             listout$metadata = node$metadata
             
             listout$cell_type = "code"
-            listout$input = paste(node$content, collapse="")
+            listout$input = paste(c(magic, node$content), collapse="\n")
             listout$outputs = lapply(node$outputs, writeIPyNode)
             listout
           })
@@ -159,5 +190,54 @@ setMethod("writeIPyNode", "TaskElement",
             listout
           })
 
+setMethod("writeIPyNode", "BranchSetElement",
+          function(node)
+          {
+            if(!is.null(node$formatSpecific))
+              listout = do.call(list, node$formatSpecific)
+            else
+              listout=list()
 
-#fromJSON("~/gabe/checkedout/ipython/notebook.ipynb", function(...) browser()
+            listout$metadata = node$metadata
+            listout$cell_type = "altset"
+            listout$cells = lapply(node$children, writeIPyNode)
+            listout
+          })
+
+setMethod("writeIPyNode", "BranchElement",
+          function(node)
+          {
+            if(!is.null(node$formatSpecific))
+              listout = do.call(list, node$formatSpecific)
+            else
+              listout=list()
+
+            listout$metadata = node$metadata
+            listout$cell_type = "alt"
+            listout$cells = lapply(node$children, writeIPyNode)
+            listout
+          })
+
+
+setMethod("writeIPyNode", "IntRCodeElement",
+          function(node)
+          {
+            tmp = as(node, "RCodeElement", strict=TRUE)
+            listout = writeIPyNode(tmp)
+            listout$cell_type = "interactivecode"
+            listout$widgets = lapply(node$widgets, widgetToIPyNBList)            
+            listout
+          })
+
+setMethod("writeIPyNode", "IntCodeElement",
+          function(node)
+          {
+            tmp = as(node, "CodeElement", strict=TRUE)
+            listout = writeIPyNode(tmp)
+            listout$cell_type = "interactivecode"
+            listout$widgets = lapply(node$widgets, widgetToIPyNBList)            
+            listout
+          })
+
+          
+

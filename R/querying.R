@@ -1,4 +1,4 @@
-subquery = function(start, type=character(), attrs=list(), position=integer(), fun = NULL, all.descendents = FALSE)
+subquery = function(start, type=character(), attrs=list(), position=integer(), fun = NULL, all.levels = FALSE, parent=FALSE)
 {
   if(!is.null(fun) && (length(type) || length(attrs) ))
     warning("filter function (fun) and other attributes (type, attrs) were specified for subquery. Only filter function and position will be applied.")
@@ -6,14 +6,27 @@ subquery = function(start, type=character(), attrs=list(), position=integer(), f
   #if we have multiple starting points, eg the output of a previous call to subquery, query each one one at a time and combine the results
   if(is(start, "list"))
     {
-      ret = unlist(lapply(start, subquery, type=type, attrs = attrs, fun = fun, all.descendents = all.descendents), recursive=FALSE)
+      ret = unlist(lapply(start, subquery, type=type, attrs = attrs, fun = fun, all.levels = all.levels), recursive=FALSE)
       return(as(ret, "ElementList"))
     }
   
   if(is(start, "DynDoc"))
-    els = start$elements
+    {
+      if(!parent)
+        els = start$elements
+      else
+        return(as(list(), "ElementList")) #there are no parents
+    }
   else if (is(start, "ContainerElement"))
-    els = start$children
+    if(!parent)
+      els = start$children
+    else
+      {
+        if(is(start$parent, "DynDoc") || is.null(start$parent))
+          return(as(list(), "ElementList")) #there are no parent elements
+        else
+          els = as(list(start$parent), "ElementList")
+      }
   else
     return(as(list(), "ElementList"))# we are at a terminal node, no children to check.
   
@@ -35,10 +48,10 @@ subquery = function(start, type=character(), attrs=list(), position=integer(), f
       #This represents position in the result set, ie I want the third text element, NOT posInParent
 
     }
-  if(all.descendents)
+  if(all.levels)
     #if we are searching through the whole (sub)tree, apply the same query to all children of start (this is recursive)
     #This search is breadth first NOT depth first
-    ret = c(ret, subquery(els, type=type, attrs = attrs, fun=fun, all.descendents=TRUE))
+    ret = c(ret, subquery(els, type=type, attrs = attrs, fun=fun, all.levels=TRUE, parent = parent))
   if(length(position))
     {
       matches.pos = position[position < length(ret)]

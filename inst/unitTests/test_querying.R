@@ -22,7 +22,7 @@ test_subquery_alldesc = function()
     altset = doc[[2]]
 
     checkTrue(length(subquery(doc, type="text")) == 3)
-    checkTrue(length(subquery(doc, type="text", all.descendents=TRUE)) == 8)
+    checkTrue(length(subquery(doc, type="text", all.levels=TRUE)) == 8)
 }
 
 test_subquery_fun = function()
@@ -37,6 +37,6 @@ test_subquery_fun = function()
     makeAltImplSet(doc[2:3], doc[4:6] )
 
     checkTrue(length(subquery(doc, fun = function(x) is(x, "TextElement") && x$content %in% as.character(1:7))) == 2)
-    checkTrue(length(subquery(doc, fun = function(x) is(x, "TextElement") && x$content %in% as.character(1:7), all.descendents = TRUE)) == 7)
+    checkTrue(length(subquery(doc, fun = function(x) is(x, "TextElement") && x$content %in% as.character(1:7), all.levels = TRUE)) == 7)
     
 }

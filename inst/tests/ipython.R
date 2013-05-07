@@ -14,3 +14,5 @@ res = writeIPyNB(ipn)
 
 makeAltImplSet(ipn[2:4], ipn[5:7])
 writeIPyNB(ipn, file="~/gabe/checkedout/ipython/withalts.ipynb")
+
+stuff = readIPyNotebook("~/gabe/checkedout/ipython/withalts.ipynb")

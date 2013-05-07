@@ -182,5 +182,22 @@ altMethodSetElement = setRefClass("AltMethodSetElement", contains = "BranchSetEl
 altQuestElement = setRefClass("AltQuestElement", contains = "BranchElement")
 altQuestSetElement = setRefClass("AltQuestSetElement", contains = "BranchSetElement")
 
-sectElement = setRefClass("SectionElement", contains = "BranchElement")
+sectElement = setRefClass("SectionElement", contains = "ContainerElement",
+  fields = list(.fromheader = "logical",
+    fromheader = function(value)
+    {
+      if(missing(value))
+        .fromheader
+      else
+        .fromheader <<- value
+      },
+    .title = "character",
+    title = function(value)
+    {
+      if(missing(value))
+        .title
+      else
+        .title <<- value
+      }
+    ))
  

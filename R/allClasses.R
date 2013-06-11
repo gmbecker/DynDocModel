@@ -19,6 +19,14 @@ setClass("IWidgetIntTextbox", contains = "IWidgetTextbox")
 setClass("IWidgetNumTextbox", contains = "IWidgetTextbox")
 
 dynDoc = setRefClass("DynDoc", fields = list(
+                                 .envir = "environment",
+                                 envir = function(value)
+                                 {
+                                   if(missing(value))
+                                     .envir
+                                   else
+                                     .envir <<- value
+                                 },
                                  .elements = "ElementList",
                                  elements = function(value)
                                  {
@@ -76,13 +84,23 @@ dynDoc = setRefClass("DynDoc", fields = list(
 
 docElement = setRefClass("DocElement", fields = list(
                                          parent = "ANY",
-                                         metadata = "ListOrNull",
+                                         #metadata = "ListOrNull", #attributes makes more sense, so changing to that
+                                         attributes = "ListOrNull",
                                          formatSpecific = "ListOrNull",
                                          posInParent = "numeric",
                                          id = "character"))
 
 containerElement = setRefClass("ContainerElement", contains = "DocElement",
-  fields = list(.children = "ElementList",
+  fields = list(
+    .envir = "environment",
+    envir = function(value)
+    {
+      if(missing(value))
+        .envir
+      else
+        .envir <<- value
+    },
+    .children = "ElementList",
     children = function(value)
     {
       if(missing(value))
@@ -98,12 +116,45 @@ containerElement = setRefClass("ContainerElement", contains = "DocElement",
                                                 el$posInParent = i
                                                 el
                                               }), "ElementList")
+
           .children <<- value
-          
+          .self$resetInOutVars()
         }
     }
     ),
   methods = list(
+    resetInOutVars = function()
+    {
+      listin = lapply(.self$children, function(el)
+        {
+          if(!(is(el, "CodeElement")||is(el, "ContainerElement")))
+            return(NULL)
+          el$resetInOutVars()
+          el$invars
+        })
+      listout = lapply(.self$children, function(el)
+        {
+          if(!(is(el, "CodeElement")||is(el, "ContainerElement")))
+            return(NULL)
+          el$outvars
+        })
+
+      retin = character()
+      retout = character()
+      for(i in seq(along=listin))
+        {
+          tmpin = listin[[i]]
+          if(!is.null(tmpin))
+            {
+              retin = c(retin, tmpin[! (tmpin %in% retout) ] )
+              retout = c(retout, listout[[i]])
+            }
+        }
+                
+      .self$invars = retin
+      .self$outvars = retout
+
+    },
     addChild = function(newel)
     {
       newpos = length(children) + 1
@@ -132,12 +183,40 @@ containerElement = setRefClass("ContainerElement", contains = "DocElement",
 taskElement = setRefClass("TaskElement", contains = "ContainerElement")
 
 codeElement = setRefClass("CodeElement", contains = "DocElement",
-  fields = list(content = "character",
+  fields = list(
+    .envir = "environment",
+    envir = function(value)
+    {
+      if(missing(value))
+        .envir
+      else
+        .envir <<- value
+    },
+    .hash = "character",
+    .invars = "character",
+    invars = function(value)
+    {
+      if(missing(value))
+        .invars
+      else
+        .invars <<- value
+    },
+    .outvars = "character",
+    outvars = function(value)
+    {
+      if(missing(value))
+        .outvars
+      else
+        .outvars <<- value
+    },
+    content = "character",
     outputs = "ElementList"))
 
 rCodeElement = setRefClass("RCodeElement", contains = "CodeElement")
-
-pyCodeElement = setRefClass("PyCodeElement", contains = "CodeElement")
+pyCodeElement = setRefClass("PyCodeElement", contains = "CodeElement",
+  methods = list(
+    resetInOutVars = function() NULL #currently we don't know how to do this for python
+    ))
 
 intCodeElement = setRefClass("IntCodeElement", contains = "CodeElement",
   fields = list(widgets = function(val)
@@ -183,14 +262,7 @@ altQuestElement = setRefClass("AltQuestElement", contains = "BranchElement")
 altQuestSetElement = setRefClass("AltQuestSetElement", contains = "BranchSetElement")
 
 sectElement = setRefClass("SectionElement", contains = "ContainerElement",
-  fields = list(.fromheader = "logical",
-    fromheader = function(value)
-    {
-      if(missing(value))
-        .fromheader
-      else
-        .fromheader <<- value
-      },
+  fields = list(
     .title = "character",
     title = function(value)
     {
@@ -201,3 +273,4 @@ sectElement = setRefClass("SectionElement", contains = "ContainerElement",
       }
     ))
  
+headerSectElement = setRefClass("HeaderSectElement", contains = "SectionElement")

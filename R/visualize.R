@@ -9,7 +9,7 @@ getShape = function(element)
       "circle"
   }
 
-makeDocumentGraph = function(doc, ...)
+makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightblue", "blue"), ...) #taskpalette = brewer.pal(6, "GnBu"), ...)
   {
 
         
@@ -19,13 +19,14 @@ makeDocumentGraph = function(doc, ...)
     parentlist = numeric()
     branchstart = numeric()
     shapes = character()
+    taskdepth = 0
+    colors = character()
 
 #recursive function to calculate (non-directed) edges between nodes in the document graph.
 # if element is a branchset, returns the indexes of the nodes written at the bottom of each branch, otherwise returns the index of the last node written
     .processElement = function(element, branchparent = FALSE)
       {
 
-        print(c(class(element), getShape(element), curcell))
         #always draw the current node
         tmplist = list(edges = parentlist)
                                         #   else
@@ -38,7 +39,12 @@ makeDocumentGraph = function(doc, ...)
         tmp = parentlist
         parentlist <<- curcell
         curcell <<- curcell + 1
-        
+        if(is(element, "TaskElement"))
+          taskdepth <<- taskdepth + 1
+        if(taskdepth)
+          colors <<- c(colors, taskpalette[taskdepth])
+        else
+          colors <<- c(colors, "white")
 
         #If the node has children, recursively draw its contents
         if(is(element, "BranchSetElement"))
@@ -59,7 +65,9 @@ makeDocumentGraph = function(doc, ...)
               }
             if(branchparent)
               parentlist <<- tmp
-            
+
+            if(is(element, "TaskElement"))
+              taskdepth <<- taskdepth - 1
             ret
           }
         ret
@@ -70,10 +78,14 @@ makeDocumentGraph = function(doc, ...)
     
     for(el in doc$elements)
       .processElement(el)
-    names(graphlist) = seq(along=graphlist)
-    names(shapes) = names(graphlist)
+    nms = as.character(seq(along=graphlist))
+    names(graphlist) = nms
+    names(shapes) = nms
+    names(colors) = nms
     ret = graphNEL(nodes = names(graphlist), edgeL = graphlist, edgemode = "directed")
-    nodeRenderInfo(ret) = list(shape = shapes)
+    print(as.list(colors))
+    nodeRenderInfo(ret) = list(shape = shapes, fill="red")
+   # nodeRenderInfo(ret) = list(fill = colors)
     lout = layoutGraph(ret)
     renderGraph(lout)
     lout

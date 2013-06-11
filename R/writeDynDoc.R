@@ -13,15 +13,16 @@ getDefaultRenderer = function(format)
     format = tolower(format)
     ret = DefaultRenderers[[format]]
     if(is.null(ret))
-      stop(paste0("Format '", format, "' is not associated with a default renderer. Please specify a renderer explicitly or rename the file."))
+      stop(paste0("Format '", format, "' is not associated with a default renderer. Please specify a renderer explicitly."))
     ret
 
   }
 
 writeDynDoc = function(doc,
   file = NULL,
-  format = if(!is.null(file)) tolower(gsub(".*\\.(*$)", "\\1", file)) else NULL,
-  renderer = if(!is.null(format)) DefaultRenders[[tolower(format)]] else getDefaultRenderer(file), ...)
+  format = {if(!is.null(file)) tolower(gsub(".*\\.(*$)", "\\1", file)) else NULL},
+  renderer = {if(!is.null(format)) DefaultRenders[[tolower(format)]] else getDefaultRenderer(file, ...)}
+  )
   {
     renderer(doc, file, ...)
   }

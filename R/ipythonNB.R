@@ -31,14 +31,14 @@ processEl = function(el, parent= NULL)
 
 mdElFromIPN = function(el, parent)
   {
-    newel = mdElement$new(content=el$source, parent = parent, metadata = el$metadata)
+    newel = mdElement$new(content=el$source, parent = parent, attributes = el$metadata)
     parent$addChild(newel)
     parent
   }
 
 textElFromIPN = function(el, parent)
   {
-    newel = textElement$new(content=el$source, parent = parent, metadata = el$metadata)
+    newel = textElement$new(content=el$source, parent = parent, attributes = el$metadata)
     parent$addChild(newel)
 #    parent
     newel
@@ -186,7 +186,7 @@ outToOutputEl = function(outel, code, parent)
     format = outel$output_type
     metadata = outel$metadata
     formatSpecific = outel[!grepl("(text|output_type|metadata)", names(outel))]
-    outputElement$new(codeElement = code, parent = parent, content = content, format = format, metadata = metadata, formatSpecific = formatSpecific)
+    outputElement$new(codeElement = code, parent = parent, content = content, format = format, attributes = metadata, formatSpecific = formatSpecific)
   }
 
 
@@ -237,7 +237,7 @@ setMethod("writeIPyNode", "CodeElement",
               listout=list()
   
 
-            listout$metadata = node$metadata
+            listout$metadata = node$attributes
             
             listout$cell_type = "code"
             listout$input = paste(c(magic, node$content), collapse="\n")
@@ -253,7 +253,7 @@ setMethod("writeIPyNode", "OutputElement",
               listout = do.call(list, node$formatSpecific)
             else
               listout=list()
-            listout$metadata = node$metadata
+            listout$metadata = node$attributes
             listout$cell_type="output"
             listout$output_type = node$format
             listout$text = paste(node$content, collapse="")
@@ -268,7 +268,7 @@ setMethod("writeIPyNode", "TextElement",
             else
               listout=list()
             
-            listout$metadata = node$metadata
+            listout$metadata = node$attributes
             listout$cell_type = if(is(node, "MDTextElement")) "markdown" else "raw"
             listout$source = paste(node$content, collapse="\n")
             listout
@@ -281,7 +281,7 @@ setMethod("writeIPyNode", "TaskElement",
               listout = do.call(list, node$formatSpecific)
             else
               listout=list()
-            listout$metadata = node$metadata
+            listout$metadata = node$attributes
             listout$cell_type = "task"
             listout$cells = lapply(node$children, writeIPyNode)
             listout
@@ -295,7 +295,7 @@ setMethod("writeIPyNode", "BranchSetElement",
             else
               listout=list()
 
-            listout$metadata = node$metadata
+            listout$metadata = node$attributes
             listout$cell_type = "altset"
             listout$cells = lapply(node$children, writeIPyNode)
             listout
@@ -309,7 +309,7 @@ setMethod("writeIPyNode", "BranchElement",
             else
               listout=list()
 
-            listout$metadata = node$metadata
+            listout$metadata = node$attributes
             listout$cell_type = "alt"
             listout$cells = lapply(node$children, writeIPyNode)
             listout

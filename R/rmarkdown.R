@@ -6,6 +6,7 @@
 
 rchunkbeg = "^\\s*```+\\s*\\{r(.*)\\}\\s*$"
 rchunkend = "^\\s*```+\\s*$"
+# in makeMixedEl.R rinline =  "`r +([^`\n]+)\\s*`"
 
 readRmd = function(file, ...)
   {
@@ -23,13 +24,28 @@ readRmd = function(file, ...)
       #missing category for the last pt
       chnum = c(chnum, max(chnum))
       res = tapply(filetext, chnum, handleRmdChunk, simplify=FALSE)
+      doc = new("DynDoc", elements = res)
+#      doc$insertChildren(res, 1)
+      doc
     }
 
 
 handleRmdChunk = function(chunk, ...)
     {
-        chunk
-    }
+        if(length(grep(rchunkbeg, chunk)))
+            {
+                #remove begining and ending of chunk to leave only code
+                cbegin = chunk[1]
+                code = chunk[-c(1, length(chunk))]
+                codel = makeCodeEl(code, "R", formatSpecific = list(chunk.start =  cbegin))
+                codel
+            } else if (length(grep(rinlineMD, chunk))) {
+                makeMixedEl(chunk, format = "rmd")
+                #need a case to detect inline latex
+            } else {
+                new("MDTextElement", content = chunk)
+            }
+     }
 
 writeRmd = function(doc, file, ...)
   {

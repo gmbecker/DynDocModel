@@ -109,18 +109,36 @@ containerElement = setRefClass("ContainerElement", contains = "DocElement",
         {
           if(is(value, "DocElement"))
             value = as(list(value), "ElementList")
-          value = as(sapply(seq(along = value), function(i)
-                                              {
-                                                el = value[[i]]
-                                                el$parent = .self
-                                                el$posInParent = i
-                                                el
-                                              }), "ElementList")
-
+          value = as(sapply(seq(along = value),
+              function(i)
+              {
+                  el = value[[i]]
+                  el$parent = .self
+                  el$posInParent = i
+                  el
+              }),
+              "ElementList")
+          
           .children <<- value
           .self$resetInOutVars()
         }
-    }
+    },
+      .invars = "character",
+      invars = function(value)
+      {
+          if(missing(value))
+              .invars
+          else
+              .invars <<- value
+      },
+      .outvars = "character",
+      outvars = function(value)
+      {
+          if(missing(value))
+              .outvars
+          else
+              .outvars <<- value
+      }
     ),
   methods = list(
     resetInOutVars = function()
@@ -184,35 +202,87 @@ taskElement = setRefClass("TaskElement", contains = "ContainerElement")
 
 codeElement = setRefClass("CodeElement", contains = "DocElement",
   fields = list(
-    .envir = "environment",
-    envir = function(value)
-    {
-      if(missing(value))
-        .envir
-      else
-        .envir <<- value
-    },
-    .hash = "character",
-    .invars = "character",
-    invars = function(value)
-    {
-      if(missing(value))
-        .invars
-      else
-        .invars <<- value
-    },
-    .outvars = "character",
-    outvars = function(value)
-    {
-      if(missing(value))
-        .outvars
-      else
-        .outvars <<- value
-    },
-    content = "character",
-    outputs = "ElementList"))
+      .envir = "environment",
+      envir = function(value)
+      {
+          if(missing(value))
+              .envir
+          else
+              .envir <<- value
+      },
+      .codehash = "character",
+      codehash = function(value)
+      {
+          if(missing(value))
+              .codehash
+          else
+              .codehash <<- value
+      },
+      .invars = "character",
+      invars = function(value)
+      {
+          if(missing(value))
+              .invars
+          else
+              .invars <<- value
+      },
+      .outvars = "character",
+      outvars = function(value)
+      {
+          if(missing(value))
+              .outvars
+          else
+              .outvars <<- value
+      },
+      .content = "character",
+      content = function(value)
+      {
+          if(missing(value))
+              .content
+          else
+              {
+                  .content <<- value
+                  valhash = digest(unparse(parse(text=value)))
+                  #the first time content is added during construction, codehash will be character(0)
+                  if(length(codehash) && valhash != codehash)
+                      {
+                          codehash <<- valhash
+                          .self$resetInOutVars(force=TRUE)
+                      }
+                  value
+              }
+      },
+      outputs = "ElementList")
+    )
 
-rCodeElement = setRefClass("RCodeElement", contains = "CodeElement")
+rCodeElement = setRefClass("RCodeElement", contains = "CodeElement",
+    methods = list(
+        
+        resetInOutVars = function(force= FALSE, extra.inputs = NULL, extra.outputs = NULL)
+        {
+            #Are there any times that this gets called that it doesn't need to update the in and out variables?
+           # if(!is(invars, "uninitializedField") &&  !is(outvars, "uninitializedField")  && !force && is.null(extra.inputs) && is.null(extra.outputs))
+            #    return()
+
+                             #this will add the `{` function to our functions called, but thats probably ok...?
+            code = content
+            lastline = code[length(code)]
+            if(substr(code[1], 1, 1) != "{" || substr(lastline, nchar(lastline), nchar(lastline)))
+                code2 = c("{", code, "}")
+            else
+                code2 = code
+            scr = readScript("", type="R", txt=code2)
+            codeInfo = getInputs(scr)[[1]]
+            
+            invars <<- c(codeInfo@inputs, extra.inputs)
+            outvars <<- c( codeInfo@outputs, extra.outputs)
+            invisible(list(inputs = invars, outputs = outvars))
+        }
+                
+                
+
+
+        ))
 pyCodeElement = setRefClass("PyCodeElement", contains = "CodeElement",
   methods = list(
     resetInOutVars = function() NULL #currently we don't know how to do this for python
@@ -248,7 +318,24 @@ textElement = setRefClass("TextElement", contains="DocElement",
 
 mdElement = setRefClass("MDTextElement", contains="TextElement")
 
+latexElement = setRefClass("LatexTextElement", contains = "TextElement")
+
 dbElement = setRefClass("DbTextElement", contains="TextElement")
+
+inlineR = setRefClass("InlineRCode", contains = "RCodeElement")
+
+inlineLatex = setRefClass("InlineLatex", contains = "LatexTextElement")
+
+mixedElement = setRefClass("MixedTextElement", contains = "ContainerElement")
+
+mixedMDElement = setRefClass("MixedMDElement", contains = "MixedTextElement")
+
+mixedDBElement = setRefClass("MixedDBElement", contains = "MixedTextElement")
+
+mixedLatexElement = setRefClass("MixedLatexElement", contains = "MixedTextElement")
+
+
+
 
 branchElement = setRefClass("BranchElement", contains = "ContainerElement")
 

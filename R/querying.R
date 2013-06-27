@@ -29,6 +29,8 @@ findPath = function(doc, start, end)
         }
     }
 
+    curlev= c(start, curlev)
+
     new("DocThread", children = curlev, parentDoc = doc)
 }
 

@@ -16,3 +16,5 @@ makeAltImplSet(ipn[2:4], ipn[5:7])
 writeIPyNB(ipn, file="~/gabe/checkedout/ipython/withalts.ipynb")
 
 stuff = readIPyNotebook("~/gabe/checkedout/ipython/withalts.ipynb")
+
+thing = findPath(ipn, ipn[[2]], ipn[[7]])

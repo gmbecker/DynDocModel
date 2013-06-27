@@ -44,12 +44,13 @@ dynDoc = setRefClass("DynDoc", fields = list(
                                                 el
                                               }), "ElementList")
                                        .elements <<- value
-                                       
+
                                      }
                                  },
                                  metadata = "ListOrNull",
-                                 formatSpecific = "ListOrNull"),
-  methods = list(
+                                 formatSpecific = "ListOrNull",
+                               .testbit = "ANY"),
+methods = list(
     addChild = function(newel)
     {
       newpos = length(elements)+1
@@ -72,7 +73,7 @@ dynDoc = setRefClass("DynDoc", fields = list(
       elsbefore = elements[-afterinds]
       .self$elements = as(c(elsbefore, elList, elsafter), "ElementList")
       #parent/child stuff taken care off in field assignment
-     
+
     },
     removeChild = function(oldel)
     {
@@ -83,12 +84,24 @@ dynDoc = setRefClass("DynDoc", fields = list(
   )
 
 docElement = setRefClass("DocElement", fields = list(
-                                         parent = "ANY",
-                                         #metadata = "ListOrNull", #attributes makes more sense, so changing to that
-                                         attributes = "ListOrNull",
-                                         formatSpecific = "ListOrNull",
-                                         posInParent = "numeric",
-                                         id = "character"))
+                                       parent = "ANY",
+                                        #metadata = "ListOrNull", #attributes makes more sense, so changing to that
+                                       attributes = "ListOrNull",
+                                       formatSpecific = "ListOrNull",
+                                       posInParent = "numeric",
+                                       id = "character",
+                                       .testbit = "logical"),
+
+                                       methods = list(
+                                         initialize = function(obj, .testbit, ...)
+                                         {
+                                             if(!missing(.testbit))
+                                             {
+                                                 warning("The .testbit field is for internal use only and should not be manually initialized. Ignoring initialization value.")
+                                             }
+                                             callSuper(.testbit = TRUE, ...)
+                                         })
+)
 
 containerElement = setRefClass("ContainerElement", contains = "DocElement",
   fields = list(
@@ -118,7 +131,7 @@ containerElement = setRefClass("ContainerElement", contains = "DocElement",
                   el
               }),
               "ElementList")
-          
+
           .children <<- value
           .self$resetInOutVars()
         }
@@ -168,7 +181,7 @@ containerElement = setRefClass("ContainerElement", contains = "DocElement",
               retout = c(retout, listout[[i]])
             }
         }
-                
+
       .self$invars = retin
       .self$outvars = retout
 
@@ -195,7 +208,7 @@ containerElement = setRefClass("ContainerElement", contains = "DocElement",
       elsbefore = children[-afterinds]
       .self$children = as(c(elsbefore, elList, elsafter), "ElementList")
       #parent child stuff is now taken care of in activeBinding methods on the fields themselves.
-      
+
     })
   )
 taskElement = setRefClass("TaskElement", contains = "ContainerElement")
@@ -242,7 +255,7 @@ codeElement = setRefClass("CodeElement", contains = "DocElement",
           else
               {
                   .content <<- value
-                  valhash = digest(unparse(parse(text=value)))
+                  valhash = digest(value)#digest(unparse(parse(text=value)))
                   #the first time content is added during construction, codehash will be character(0)
                   if(length(codehash) && valhash != codehash)
                       {
@@ -256,8 +269,20 @@ codeElement = setRefClass("CodeElement", contains = "DocElement",
     )
 
 rCodeElement = setRefClass("RCodeElement", contains = "CodeElement",
+fields = list(
+content = function(value)
+{
+    .content <<- value
+    valhash = digest(unparse(parse(text=value, keep.source=FALSE)))
+
+    if(length(codehash) && valhash != codehash)
+    {
+        codehash <<- valhash
+        .self$resetInOutVars
+    }
+}),
     methods = list(
-        
+
         resetInOutVars = function(force= FALSE, extra.inputs = NULL, extra.outputs = NULL)
         {
             #Are there any times that this gets called that it doesn't need to update the in and out variables?
@@ -273,13 +298,13 @@ rCodeElement = setRefClass("RCodeElement", contains = "CodeElement",
                 code2 = code
             scr = readScript("", type="R", txt=code2)
             codeInfo = getInputs(scr)[[1]]
-            
+
             invars <<- c(codeInfo@inputs, extra.inputs)
             outvars <<- c( codeInfo@outputs, extra.outputs)
             invisible(list(inputs = invars, outputs = outvars))
         }
-                
-                
+
+
 
 
         ))
@@ -359,27 +384,78 @@ sectElement = setRefClass("SectionElement", contains = "ContainerElement",
         .title <<- value
       }
     ))
- 
+
 headerSectElement = setRefClass("HeaderSectElement", contains = "SectionElement")
 
 #XXX do we want S4 classes or referenceClasses? We want evaluate(mythread) to both return the return value and change the thread, right? Is there a downside to using ReferenceClasses for this?
 
 #setClass("ElementInstance", representation(
+#setClassUnion("Instance", c("DocInstance", "ElementInstance", "NULL"))
+#we define the union then add to it later
+#setClassUnion("Instance", "NULL")
 elementInstance = setRefClass("ElementInstance",
     fields = list(
         element = "DocElement",
         formatters = "list",
         outputs = "list",
-        children = "list",
-        parentInstsance = "DocInstance",
+        .children = "list",
+        children = function(value)
+        {
+             if(missing(value))
+                 .children
+             else
+                 {
+                     old = .children
+                     sapply(old, function(x)
+                        {
+                            x$parentInstance = NULL
+                            x$posInParentInst = numeric()
+                        })
+                     .children <<- value
+                     sapply(seq(along = value), function(i)
+                            {
+                                el = value[[i]]
+                                el$parentInstance = .self
+                                el$posInParentInst = i
+                            })
+                     .children
+                 }
+         },
+        parentInstance = "ANY", #want Instances, but recursive class defs in R are hard
+        posInParentInst = "numeric",
         cacheEngine = "CachingEngine")
     )
 
+#setIs("Instance", "ElementInstance")
+
 setRefClass("DocInstance",
-         fields = list(children = "list",
+         fields = list(.children = "list",
+         children = function(value)
+         {
+             if(missing(value))
+                 .children
+             else
+                 {
+                     old = .children
+                     sapply(old, function(x)
+                        {
+                            x$parentInstance = NULL
+                            x$posInParentInst = numeric()
+                        })
+                     .children <<- value
+                     sapply(seq(along = value), function(i)
+                            {
+                                el = value[[i]]
+                                el$parentInstance = .self
+                                el$posInParentInst = i
+                            })
+                     .children
+                 }
+         },
              parentDoc = "DynDoc",
              formatters = "list",
              cacheEngine = "CachingEngine")
             )
 
+#setIs("Instance", "DocInstance")
 setRefClass("DocThread", contains = "DocInstance")

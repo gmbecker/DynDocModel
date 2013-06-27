@@ -27,4 +27,11 @@ setMethod("show", "CodeElement",
                        "\n\tparent is of class ", class(object$parent),
                        "\n\tposition in parent: ", object$posInParent,"\n"))
           })
-            
+
+setMethod("show", "DocInstance",
+          function(object)
+      {
+          cat(paste0("\nAn object of class ", class(object), "\n",
+                     "\n\tContains Instances of ", length(object$children), " document elements.\n"))
+      })
+

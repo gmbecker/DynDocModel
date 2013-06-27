@@ -361,3 +361,25 @@ sectElement = setRefClass("SectionElement", contains = "ContainerElement",
     ))
  
 headerSectElement = setRefClass("HeaderSectElement", contains = "SectionElement")
+
+#XXX do we want S4 classes or referenceClasses? We want evaluate(mythread) to both return the return value and change the thread, right? Is there a downside to using ReferenceClasses for this?
+
+#setClass("ElementInstance", representation(
+elementInstance = setRefClass("ElementInstance",
+    fields = list(
+        element = "DocElement",
+        formatters = "list",
+        outputs = "list",
+        children = "list",
+        parentInstsance = "DocInstance",
+        cacheEngine = "CachingEngine")
+    )
+
+setRefClass("DocInstance",
+         fields = list(children = "list",
+             parentDoc = "DynDoc",
+             formatters = "list",
+             cacheEngine = "CachingEngine")
+            )
+
+setRefClass("DocThread", contains = "DocInstance")

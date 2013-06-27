@@ -1,4 +1,14 @@
 
+# Possible ways to allow multiple evaluated instances of the same document E.g. from evaluating different threads
+# through it, or with different input values
+#
+# Switch to S4 classes entirely, no inherent connection between the same node within different instances
+#
+# ** Have wrapper S4 classes that carry around a referenceClass DocElement object, but can point to different parents and hang onto output, etc
+#
+
+
+
 parseEval = function(code = NULL, file =  "")
   {
     eval(parse(text = code))

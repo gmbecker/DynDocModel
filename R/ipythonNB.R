@@ -156,12 +156,13 @@ codeToCodeEl = function(code, parent, interactive = FALSE)
         #don't include \\n
         if(length(content) == 1)
           {
-            formatSpecific$rmagicLine = gsub("(%%R[^\\n]*)\\n.*", "\\1", content)
+            formatSpecific$rmagicLine = gsub("(%%R[^\\\n]*)\\\n.*", "\\1", content)
                                         #do include \\n
-            content = gsub("%%R[^\\n]*\\n", "", content)
+            content = gsub("%%R[^\\\n]*\\\n", "", content)
           } else {
             #if it is on multiple lines the %%R must be the first
             formatSpecific$rmagicLine = content[1]
+            
             content = content[-1]
           }
         language = "R"
@@ -201,7 +202,7 @@ writeIPyNB = function(doc, file = NULL, ...)
     listout$metadata = doc$metadata
 
     #TODO not handling metadata on worksheets right now.
-    listout$worksheets = list(list(cells = lapply(doc$elements, writeIPyNode)))
+    listout$worksheets = list(list(cells = lapply(doc$elements, renderCellIPyNB)))
 
     json = toJSON(listout)
     if(!is.null(file))
@@ -211,130 +212,4 @@ writeIPyNB = function(doc, file = NULL, ...)
     
   }
 
-setGeneric("writeIPyNode", function(node) standardGeneric("writeIPyNode"))
-setMethod("writeIPyNode", "CodeElement",
-          function(node)
-          {
- 
-            input = node$content
-            formspec = node$formatSpecific
-            ##TODO: someday thsi will involve changing the language element to R instead of adding the rmagic in the ipynb node, but not yet
-            magic = NULL
-            if(is(node, "RCodeElement"))
-              {
-                if(is.null(formspec) || is.null(formspec$rmagicLine))
-                  magic = "%%R"
-                else
-                  {
-                    magic = formspec$rmagicLine
-                    formspec = formspec[-grep("magic", names(formspec))]
-                  }
-             }
-           #includes language
-            if(!is.null(formspec))
-              listout = do.call(list, formspec)
-            else
-              listout=list()
-  
-
-            listout$metadata = node$attributes
-            
-            listout$cell_type = "code"
-            listout$input = paste(c(magic, node$content), collapse="\n")
-            listout$outputs = lapply(node$outputs, writeIPyNode)
-            listout
-          })
-
-setMethod("writeIPyNode", "OutputElement",
-          function(node)
-          {
-
-            if(!is.null(node$formatSpecific))
-              listout = do.call(list, node$formatSpecific)
-            else
-              listout=list()
-            listout$metadata = node$attributes
-            listout$cell_type="output"
-            listout$output_type = node$format
-            listout$text = paste(node$content, collapse="")
-            listout
-          })
-setMethod("writeIPyNode", "TextElement",
-          function(node)
-          {
-
-            if(!is.null(node$formatSpecific))
-              listout = do.call(list, node$formatSpecific)
-            else
-              listout=list()
-            
-            listout$metadata = node$attributes
-            listout$cell_type = if(is(node, "MDTextElement")) "markdown" else "raw"
-            listout$source = paste(node$content, collapse="\n")
-            listout
-          })
-
-setMethod("writeIPyNode", "TaskElement",
-          function(node)
-          {
-            if(!is.null(node$formatSpecific))
-              listout = do.call(list, node$formatSpecific)
-            else
-              listout=list()
-            listout$metadata = node$attributes
-            listout$cell_type = "task"
-            listout$cells = lapply(node$children, writeIPyNode)
-            listout
-          })
-
-setMethod("writeIPyNode", "BranchSetElement",
-          function(node)
-          {
-            if(!is.null(node$formatSpecific))
-              listout = do.call(list, node$formatSpecific)
-            else
-              listout=list()
-
-            listout$metadata = node$attributes
-            listout$cell_type = "altset"
-            listout$cells = lapply(node$children, writeIPyNode)
-            listout
-          })
-
-setMethod("writeIPyNode", "BranchElement",
-          function(node)
-          {
-            if(!is.null(node$formatSpecific))
-              listout = do.call(list, node$formatSpecific)
-            else
-              listout=list()
-
-            listout$metadata = node$attributes
-            listout$cell_type = "alt"
-            listout$cells = lapply(node$children, writeIPyNode)
-            listout
-          })
-
-
-setMethod("writeIPyNode", "IntRCodeElement",
-          function(node)
-          {
-            tmp = as(node, "RCodeElement", strict=TRUE)
-            listout = writeIPyNode(tmp)
-            listout$cell_type = "interactivecode"
-            listout$widgets = lapply(node$widgets, widgetToIPyNBList)            
-            listout
-          })
-
-setMethod("writeIPyNode", "IntCodeElement",
-          function(node)
-          {
-            tmp = as(node, "CodeElement", strict=TRUE)
-            listout = writeIPyNode(tmp)
-            listout$cell_type = "interactivecode"
-            listout$widgets = lapply(node$widgets, widgetToIPyNBList)            
-            listout
-          })
-
-          
 

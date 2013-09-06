@@ -47,8 +47,3 @@ handleRmdChunk = function(chunk, ...)
             }
      }
 
-writeRmd = function(doc, file, ...)
-  {
-    stop("not yet supported")
-
-  }

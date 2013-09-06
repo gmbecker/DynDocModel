@@ -1,28 +1,72 @@
+#XXX Need to add defaults to lists so that people can specify, e.g. a custom formatter for data.frame objects and have the default formatter used for the rest. Same goes for cell types in cellRenderers
+
+#addCell accepts an *already rendered* cell and places it in the output document, so no need for different behavior or dispatch at the cell type level for it, only at the format level
 
 DefaultRenderers = list(
-           ipynb = writeIPyNB,
-           rmd = writeRmd,
-           rnw = writeRnw,
-           rdb = writeRdb
-  )
+    rmd = renderCellRmd,
+    ipynb = renderCellIPyNB,
+    html = renderCellHTML,
+    rdb = renderCellRdb,
+    pdf = renderCellTex,
+    tex = renderCellTex
+)
 
 getDefaultRenderer = function(format)
-  {
-    if(is.null(format))
-      stop("No format (NULL) specified. Unable to determine default Renderer.")
-    format = tolower(format)
-    ret = DefaultRenderers[[format]]
-    if(is.null(ret))
-      stop(paste0("Format '", format, "' is not associated with a default renderer. Please specify a renderer explicitly."))
-    ret
+{
+    rend = NULL
+    if(!is.null(format))
+        rend = DefaultRenderers[[tolower(format)]]
+    
+    if(is.null(rend))
+        stop(sprintf("no default cell renderer found for format %s", tolower(format)))
+    rend
+}
 
-  }
 
 writeDynDoc = function(doc,
-  file = NULL,
-  format = {if(!is.null(file)) tolower(gsub(".*\\.(*$)", "\\1", file)) else NULL},
-  renderer = {if(!is.null(format)) DefaultRenders[[tolower(format)]] else getDefaultRenderer(file, ...)}
-  )
-  {
-    renderer(doc, file, ...)
-  }
+    file,
+    output.format = {if(!is.null(file)) tolower(gsub(".*\\.(*$)", "\\1", file)) else NULL},
+#    formatters = getDefaultFormatter(outFormat),
+    formatters = formatObject,
+    cell.renderers = getDefaultRenderer(output.format),
+    init.output = getDefaultInit(output.format),
+    finish.output = getDefaultFinish(output.format),
+    addCell = getDefaultAddCell(output.format),
+    ...)
+{
+    if(any(sapply(doc$children, function(x) is(x, "BranchSetElement"))))
+        warning("rendering of branching documents is probably not properly implemented yet")
+    
+    out = init.output(file, doc)
+    
+    foundRenderers = list()
+    for (el in doc$children)
+    {
+        if(is(el, "ElementInstance") && length(el$formatters))
+        {    
+            tmpformatters = c(el$formatters, if(is.function( formatters)) list("ALL" = formatters) else formatters)
+            tmpformatters = tmpformatters[!duplicated(names(tmpformatters))]
+        } else {
+            tmpformatters = formatters
+        }
+        
+        if(is.function(cell.renderers))
+            rcell = cell.renderers(el, tmpformatters)
+        else
+        {
+            if(class(el) %in% names(foundRenderers))
+                rcell = foundRenderers[[class(el)]](el, tmpformatters)
+            else
+            {
+                meth = doListDispatch(class(el), cell.renderers)
+                rcell = meth(el, tmpformatters)
+                foundRenderers[[class(el)]] = meth
+            }
+            
+        }
+        out = addCell(out, rcell)
+    }
+    finish.output(out, file, doc)
+}
+
+

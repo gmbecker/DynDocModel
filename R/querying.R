@@ -1,6 +1,13 @@
+
+#why are getThread and findPath different functions?? Will getThread eventually do something other than just call findPath?
+
 getThread = function(doc, start = 1, end = length(doc$elements))
 {
-    kidInsts = lapply(doc)
+    if(is.numeric(start) || is.integer(start))
+        start = doc[[start]]
+    if(is.numeric(end) || is.integer(end))
+        end = doc[[end]]
+    findPath(doc, start, end)
 
 }
 
@@ -64,7 +71,7 @@ makeInstance = function(el, branchInstr, doKids = TRUE)
        ret = makeInstance(el[[1]])
 
    } else if(is(el, "ContainerElement") && doKids) {
-        kids = allocVector("list", length(el$children))
+        kids = vector("list", length(el$children))
         for(k in seq(along = el$children))
         {
             kids[[k]] = makeInstance

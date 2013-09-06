@@ -35,3 +35,12 @@ setMethod("show", "DocInstance",
                      "\n\tContains Instances of ", length(object$children), " document elements.\n"))
       })
 
+setMethod("show", "ElementInstance",
+          function(object)
+      {
+          cat(paste0("\nAn object of class ", class(object), "\n",
+                     "\n\tIt is an Instance of a ", class(object$element), " document element.\n",
+                     "\tHas ", length(object$outputs), " associated output objects.\n",
+                     "\tContains Instances of ", length(object$children), " child elements\n"))
+      })
+

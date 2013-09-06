@@ -25,16 +25,49 @@ setMethod("formatOutput", "HTMLInternalDocument",
 setMethod("formatOutput", "ANY",
           function(object)
           {
-            txtcon = textConnection("printed", "w")
-            sink(txtcon)
-            print(object)
-            sink()
+              printed = capture.output(print(object))
             list(content = printed , format = "text")
           })
+
+setMethod("formatOutput", "recordedplot",
+          function(object)
+          {
+              tpng = tempfile(fileext="png")
+              png(tpng)
+              redrawPlot(object)
+              dev.off()
+              stuff = readLines(tpng)
+              list(format="data_display", png=stuff)
+          })
+
+setMethod("formatOutput", "trellis",
+          function(object)
+          {
+              tpng = tempfile(fileext="png")
+              png(tpng)
+              print(object)
+              dev.off()
+              stuff = readLines(tpng)
+              list(format="data_display", png=stuff)
+          })
+
+if(require(ggplot2))
+    {
+setMethod("formatOutput", "ggplot",
+          function(object)
+          {
+              tpng = tempfile(fileext="png")
+              png(tpng)
+              print(object)
+              dev.off()
+              stuff = readLines(tpng)
+              list(format="data_display", png=stuff)
+          })
+}
 
 setMethod("formatOutput", "NULL",
           function(object)
           {
-            list(content = "", format = "null")
+            list(content = "", format = "text")
           })
 

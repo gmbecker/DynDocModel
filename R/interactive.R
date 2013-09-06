@@ -18,11 +18,12 @@ makeInteractiveWidgets = function(node, vars, defaults, control.types = getContr
     if(length(vars) > 1)
       {
         #the list() call is to try to get it to recycle properly, we'll see if it works
-        ret = as(list(unlist(mapply(makeInteractiveWidget, list(node), vars, defaults, control.types, addl.info, linenums),recursive=TRUE)), "WidgetsList")
+        ret = as(list(unlist(mapply(makeInteractiveWidgets, list(node), vars, defaults, control.types, addl.info, linenums),recursive=TRUE)), "WidgetsList")
         return(ret)
       }
     if(is.na(linenums))
-      linenums = getFirstAssignLN(var = vars, node = node)
+      #linenums = getFirstAssignLN(var = vars, node = node)
+        stop("Automatic detection of assignment lines not yet supported")
     ret = new(control.types, var = vars, widget = control.types, linenum = linenums, default = defaults, additional.info = addl.info)
     #add extra bits
     if(control.types == "IWidgetSlider")
@@ -35,7 +36,7 @@ makeInteractiveWidgets = function(node, vars, defaults, control.types = getContr
     as(list(ret), "WidgetsList")
   }
 
-getControlType = function(defaults, add.info)
+getControlTypes = function(defaults, add.info)
 {
   if(length(defaults) > 1)
     return(mapply(getControlTypes, defaults, add.info))

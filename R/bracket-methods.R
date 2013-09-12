@@ -35,6 +35,36 @@ setMethod("[[", "ContainerElement",
             x$children[[i,...]]
           })
 
+setMethod("[", "ElementInstance",
+          function(x, i, j, ...)
+      {
+          els = x$children[i, ...]
+          as(els, class(x$children))
+      })
+
+
+setMethod("[[", "ElementInstance",
+          function(x, i, ...)
+          {
+            x$children[[i,...]]
+          })
+
+
+setMethod("[", "DocInstance",
+          function(x, i, j, ...)
+      {
+          els = x$children[i, ...]
+          as(els, class(x$children))
+      })
+
+
+setMethod("[[", "DocInstance",
+          function(x, i, ...)
+          {
+            x$children[[i,...]]
+          })
+
+
 
 setMethod("[[<-", "ContainerElement",
           function(x, i, ..., value)

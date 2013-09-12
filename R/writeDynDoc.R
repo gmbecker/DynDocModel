@@ -26,7 +26,7 @@ getDefaultRenderer = function(format)
 
 writeDynDoc = function(doc,
     file,
-    output.format = {if(!is.null(file)) tolower(gsub(".*\\.(*$)", "\\1", file)) else NULL},
+    output.format = {if(!is.null(file)) tolower(gsub(".*\\.(.*)$", "\\1", file)) else NULL},
 #    formatters = getDefaultFormatter(outFormat),
     formatters = formatObject,
     cell.renderers = getDefaultRenderer(output.format),
@@ -37,9 +37,13 @@ writeDynDoc = function(doc,
 {
     if(any(sapply(doc$children, function(x) is(x, "BranchSetElement"))))
         warning("rendering of branching documents is probably not properly implemented yet")
-    
+
+    state = new.env()
+    state$plots = 1
+    state$outdir = dirname(file)
+    state$basePlotName = paste(gsub("(.*)\\..*$", "\\1", basename(file)), "plot", sep="_")
     out = init.output(file, doc)
-    outdir = dirname(file)
+ 
     foundRenderers = list()
     for (el in doc$children)
     {
@@ -52,15 +56,15 @@ writeDynDoc = function(doc,
         }
         
         if(is.function(cell.renderers))
-            rcell = cell.renderers(el, tmpformatters, outdir = outdir)
+            rcell = cell.renderers(el, tmpformatters, state = state)
         else
         {
             if(class(el) %in% names(foundRenderers))
-                rcell = foundRenderers[[class(el)]](el, tmpformatters, outdir = outdir)
+                rcell = foundRenderers[[class(el)]](el, tmpformatters, state = state)
             else
             {
                 meth = doListDispatch(class(el), cell.renderers)
-                rcell = meth(el, tmpformatters, outdir = outidr)
+                rcell = meth(el, tmpformatters, state = state)
                 foundRenderers[[class(el)]] = meth
             }
             

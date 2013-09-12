@@ -2,10 +2,10 @@ setOldClass("trellis")
 setOldClass("ggplot")
 setClass("ElementList", contains="list")
 setClassUnion("ListOrNull", members = c("list", "NULL"))
-
+setClass("OutputList", contains = "list")
 
 setClass("FormattedOutput", representation(value = "ANY", format = "character", info = "list"))
-setClass("FormattedOutputList", contains = "list", valid = function(x) all(sapply(x, is, "FormattedOutput")))
+setClass("FormattedOutputList", contains = "list", valid = function(object) all(sapply(object, is, "FormattedOutput")))
 
 
 
@@ -436,7 +436,7 @@ elementInstance = setRefClass("ElementInstance",
             if(missing(value))
                 .children
             else
-                .replaceKids(value, .self)
+                replaceKids(value, .self)
         },
         .parentInstance = "ANY", #want Instances, but recursive class defs in R are hard
         parentInstance = function(value)

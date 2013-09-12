@@ -31,8 +31,9 @@ findPath = function(doc, start, end, ...)
                 curel = curel$parent
                 inst$children = curlev
                 curlev = list(inst)
+            } else {
+                stop("Unable to determine path between start and end elements")
             }
-            stop("Unable to determine path between start and end elements")
         }
     }
 
@@ -53,7 +54,7 @@ getSiblings = function(el, posType = c("all", "before", "after"))
 
         posType = match.arg(posType, c("all", "before", "after"))
         inds  = switch(posType,
-                      all = -1,
+                      all = -el$posInParent,
                       before = if(el$posInParent ==1) numeric() else seq(1, el$posInParent -1),
                       after = if(el$posInParent == length(sibs)) numeric() else seq(el$posInParent +1, length(sibs))
         )
@@ -70,11 +71,11 @@ makeInstance = function(el, branchInstr, doKids = TRUE)
        warning("Branching is not yet fully supported. Selecting 'first' branch to construct thread")
        ret = makeInstance(el[[1]])
 
-   } else if(is(el, "ContainerElement") && doKids) {
+   } else if(is(el, "MixedTextElement") || (is(el, "ContainerElement") && doKids)) {
         kids = vector("list", length(el$children))
         for(k in seq(along = el$children))
         {
-            kids[[k]] = makeInstance
+            kids[[k]] = makeInstance(el$children[[k]])
         }
         ret$children = kids
     } else {

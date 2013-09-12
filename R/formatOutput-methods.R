@@ -26,17 +26,16 @@ setMethod("formatOutput", "ANY",
           function(object)
           {
               printed = capture.output(print(object))
-            new("FormattedOutput", value = printed , format = "text")
+              new("FormattedOutput", value = printed , format = "text")
           })
 
 setMethod("formatOutput", "WithVisValue",
           function(object)
       {
           if(object@visible)
-              printed = capture.output(print(object@value))
+              formatOutput(object@value)
           else
-              printed = character()
-          new("FormattedOutput", value = printed, format = "text")
+              new("FormattedOutput", value = character(), format = "null")
       })
 
 
@@ -44,13 +43,13 @@ setMethod("formatOutput", "WithVisPlusGraphics",
           function(object)
       {
           if(object@visible)
-              printed = capture.output(print(object@value))
+              val = formatOutput(object@value)
           else
-              printed = character()
-          
-          val = new("FormattedOutput", value = printed, format = "text")
+              val = new("FormattedOutput", value = character(), format = "null")
           graphics = lapply(object@graphics, formatOutput)
-          as(unlist(list( graphics, val), recursive = FALSE), "FormattedOutputList")
+          if(length(graphics))
+              val = c(graphics, val)
+          as(val, "FormattedOutputList")
       })
 
 setMethod("formatOutput", "recordedplot",
@@ -74,11 +73,27 @@ setMethod("formatOutput", "ggplot",
           })
 }
 
-setMethod("formatOutput", "NULL",
+
+setMethod("formatOutput", "PlotList",
           function(object)
-          {
-            new("FormattedOutput", value = character(), format = "text")
-          })
+      {
+          ret = lapply(object, formatOutput)
+          as(ret, "FormattedOutputList")
+      })
+
+setMethod("formatOutput", "OutputList",
+          function(object)
+      {
+          ret = lapply(object, formatOutput)
+          as(ret, "FormattedOutputList")
+      })
+
+
+#setMethod("formatOutput", "NULL",
+#          function(object)
+#          {
+#            new("FormattedOutput", value = character(), format = "text")
+#          })
 
 .fimage <- function(obj, disp_fun = print)
 {

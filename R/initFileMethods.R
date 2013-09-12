@@ -24,19 +24,18 @@ initIPyNB = function(fname, doc)
     out
 }
 
-#default HTML path will go through md renders and then have finishHTML call teh markdown package.
-initMd = initRmd = initHTML = function(fname, doc, ...)
+#default HTML path will go through md renders and then have finishHTML call the markdown package.
+initMD = initRmd = initHTML = function(fname, doc, ...)
 {
-    con = file(fname, "w")
-    con
+    character()
 }
 
 
 initRdb = initTex = function(fname, doc) stop("Not implemented yet")
 
-DefaultInit = list(
+DefaultInit <- list(
     rmd = initRmd,
-    md = initMd,
+    md = initMD,
     ipynb = initIPyNB,
     html = initHTML,
     rdb = initRdb,

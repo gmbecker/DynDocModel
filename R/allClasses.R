@@ -3,6 +3,12 @@ setOldClass("ggplot")
 setClass("ElementList", contains="list")
 setClassUnion("ListOrNull", members = c("list", "NULL"))
 
+
+setClass("FormattedOutput", representation(value = "ANY", format = "character", info = "list"))
+setClass("FormattedOutputList", contains = "list", valid = function(x) all(sapply(x, is, "FormattedOutput")))
+
+
+
 setClass("WidgetsList", contains="list")
 setClass("IWidget", representation(var = "character",
                                         #I think we want to specify widget by class, but I'll leave this here for custom widgets?
@@ -19,9 +25,6 @@ setClass("IWidgetSlider", representation(range = "numeric",
 setClass("IWidgetTextbox", contains = "IWidget")
 setClass("IWidgetIntTextbox", contains = "IWidgetTextbox")
 setClass("IWidgetNumTextbox", contains = "IWidgetTextbox")
-
-
-
 
 dynDoc = setRefClass("DynDoc", fields = list(
                                    .envir = "environment",
@@ -90,7 +93,7 @@ dynDoc = setRefClass("DynDoc", fields = list(
         initialize = function(cacheEngine, ...)
         {
             if(missing(cacheEngine))
-                cEngine = new("CachingEngine", base_dir = "./")
+                cEngine = cachingEngine( base_dir = "./r_caches/", eval_fun = parseWithVis, return_handler = wVGraphicsHandler)
             else
                 cEngine = cacheEngine
             callSuper(cacheEngine = cEngine, ...)
@@ -115,10 +118,15 @@ docElement = setRefClass("DocElement",
                 {
                     warning("The .testbit field is for internal use only and should not be manually initialized. Ignoring initialization value.")
                 }
-            if(missing(cacheEngine))
-                cEngine = new("CachingEngine", base_dir = "./")
-            else
+            args = list(...)
+            if(missing(cacheEngine)){
+                if("parent" %in% names(args))
+                    cEngine = args$parent$cacheEngine
+                else
+                    cEngine = new("CachingEngine", base_dir = "./r_caches/", return_handler = wVGraphicsHandler, eval_fun = parseWithVis)
+            } else {
                 cEngine = cacheEngine
+            }
             callSuper(.testbit = TRUE, cacheEngine = cEngine, ...)
         })
     )
@@ -317,10 +325,12 @@ rCodeElement = setRefClass("RCodeElement", contains = "CodeElement",
                              #this will add the `{` function to our functions called, but thats probably ok...?
             code = content
             lastline = code[length(code)]
-            if(substr(code[1], 1, 1) != "{" || substr(lastline, nchar(lastline), nchar(lastline)))
+            if(substr(code[1], 1, 1) != "{" || substr(lastline, nchar(lastline), nchar(lastline)) != "}")
                 code2 = c("{", code, "}")
             else
                 code2 = code
+            if(length(code2) > 1)
+                code = paste(code, collapse="\n")
             scr = readScript("", type="R", txt=code2)
             codeInfo = getInputs(scr)[[1]]
             
@@ -437,7 +447,7 @@ elementInstance = setRefClass("ElementInstance",
                 {
                     .parentInstance <<- value
                     parent.env(envir) <<- value$envir
-                    .cacheEngine = value$cacheEngine
+                    .cacheEngine <<- value$cacheEngine
                     .parentInstance
                 }
         },
@@ -480,16 +490,14 @@ setRefClass("DocInstance",
                     else
                         env = envir
                     args = list(...)
-                    if(missing(cacheEngine))
-                        {
-                            if("parentDoc" %in% names(args))
-                                cEngine = args$parentDoc$cacheEngine
-                            else
-                                cEngine = new("CachingEngine", base_dir = "./")
-                        }
-                    else
+                    if(missing(cacheEngine)) {
+                        if("parentDoc" %in% names(args))
+                            cEngine = args$parentDoc$cacheEngine
+                        else
+                            cEngine = new("CachingEngine", base_dir = "./r_caches/", eval_fun = parseWithVis, return_handler = wVGraphicsHandler)
+                    } else {
                         cEngine = cacheEngine
-                    
+                    }
                     callSuper( envir = env, cacheEngine = cEngine, ...)
                     
                     

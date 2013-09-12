@@ -2,10 +2,11 @@
 
 #addCell accepts an *already rendered* cell and places it in the output document, so no need for different behavior or dispatch at the cell type level for it, only at the format level
 
-DefaultRenderers = list(
+DefaultRenderers <- list(
     rmd = renderCellRmd,
     ipynb = renderCellIPyNB,
-    html = renderCellHTML,
+    html = renderCellMD, #to get HTML we make markdown and call markdownToHTML in the finish method
+    md = renderCellMD,
     rdb = renderCellRdb,
     pdf = renderCellTex,
     tex = renderCellTex
@@ -38,7 +39,7 @@ writeDynDoc = function(doc,
         warning("rendering of branching documents is probably not properly implemented yet")
     
     out = init.output(file, doc)
-    
+    outdir = dirname(file)
     foundRenderers = list()
     for (el in doc$children)
     {
@@ -51,20 +52,26 @@ writeDynDoc = function(doc,
         }
         
         if(is.function(cell.renderers))
-            rcell = cell.renderers(el, tmpformatters)
+            rcell = cell.renderers(el, tmpformatters, outdir = outdir)
         else
         {
             if(class(el) %in% names(foundRenderers))
-                rcell = foundRenderers[[class(el)]](el, tmpformatters)
+                rcell = foundRenderers[[class(el)]](el, tmpformatters, outdir = outdir)
             else
             {
                 meth = doListDispatch(class(el), cell.renderers)
-                rcell = meth(el, tmpformatters)
+                rcell = meth(el, tmpformatters, outdir = outidr)
                 foundRenderers[[class(el)]] = meth
             }
             
         }
-        out = addCell(out, rcell)
+        if(is(rcell, "FormattedOutputList"))
+        {
+            for(ocell in rcell)
+                out = addCell(out, ocell)
+        } else {
+            out = addCell(out, rcell)
+        }
     }
     finish.output(out, file, doc)
 }

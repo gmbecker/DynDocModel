@@ -20,6 +20,8 @@ setGeneric("renderCellRdb", function(node, formatters, ...) standardGeneric("ren
 setMethod("renderCellRdb", c(node = "ANY"), function(node, formatters, ...) stop(sprintf("unsupported element class %s", class(node))))
 setGeneric("renderCellTex", function(node, formatters, ...) standardGeneric("renderCellTex"))
 setMethod("renderCellTex", c(node = "ANY"), function(node, formatters, ...) stop(sprintf("unsupported element class %s", class(node))))
+setGeneric("renderCellMD", function(node, formatters, ...) standardGeneric("renderCellMD"))
+setMethod("renderCellMD", c(node = "ANY"), function(node, formatters, ...) stop(sprintf("unsupported element class %s", class(node))))
 
 setGeneric("getIPyCellType", function(el) standardGeneric("getIPyCellType"))
 

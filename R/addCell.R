@@ -1,4 +1,8 @@
+addCellMD = function(outdoc, content)
+{
+    c(outdoc, content)
 
+}
 
 addCellHTML = function(outdoc, content)
     {
@@ -24,8 +28,9 @@ addCellIPyNB = function(outdoc, content)
     }
 
 addCellRdb = addCellRmd = addCellTex = function(outdoc, content) stop("not yet implemented")
-DefaultAddCells = list(
+DefaultAddCells <- list(
     html = addCellHTML,
+    md = addCellMD,
     ipynb = addCellIPyNB,
     rmd = addCellRmd,
     rdb = addCellRdb,

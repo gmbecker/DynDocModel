@@ -1,17 +1,17 @@
 
 #why are getThread and findPath different functions?? Will getThread eventually do something other than just call findPath?
 
-getThread = function(doc, start = 1, end = length(doc$elements))
+getThread = function(doc, start = 1, end = length(doc$elements), ...)
 {
     if(is.numeric(start) || is.integer(start))
         start = doc[[start]]
     if(is.numeric(end) || is.integer(end))
         end = doc[[end]]
-    findPath(doc, start, end)
+    findPath(doc, start, end, ...)
 
 }
 
-findPath = function(doc, start, end)
+findPath = function(doc, start, end, ...)
 {
     curlev = list()
     curel = end
@@ -38,7 +38,7 @@ findPath = function(doc, start, end)
 
     curlev= c(start, curlev)
 
-    new("DocThread", children = curlev, parentDoc = doc)
+    new("DocThread", children = curlev, parentDoc = doc, ...)
 }
 
 getSiblings = function(el, posType = c("all", "before", "after"))

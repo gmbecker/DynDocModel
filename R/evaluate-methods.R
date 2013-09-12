@@ -46,6 +46,7 @@ setMethod("evalDynDoc", "ElementInstance",
               args = list(obj = el, eval = eval, env = env, value = value,...)
               if(!"cache" %in% names(args))
                   args$cache = obj$cacheEngine
+
               res = do.call(evalDynDoc, args)
               #res = evalDynDoc(el, eval, env, cache = obj$cacheEngine ...)
               if(!is(res, "list"))

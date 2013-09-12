@@ -4,20 +4,20 @@ if(require(XML))
 setMethod("formatOutput", "XMLInternalNode",
           function(object)
           {
-            list(content = saveXML(object), format = "xml")
+            new("FormattedOutput", value = saveXML(object), format = "xml")
           })
 
 setMethod("formatOutput", "XMLInternalDocument",
           function(object)
           {
-            list(content = saveXML(object), format = "xml")
+            new("FormattedOutput", value = saveXML(object), format = "xml")
           })
 
 
 setMethod("formatOutput", "HTMLInternalDocument",
           function(object)
           {
-            list(content = saveXML(object), format = "html")
+            new("FormattedOutput", value = saveXML(object), format = "html")
           })
 }
 
@@ -26,29 +26,43 @@ setMethod("formatOutput", "ANY",
           function(object)
           {
               printed = capture.output(print(object))
-            list(content = printed , format = "text")
+            new("FormattedOutput", value = printed , format = "text")
           })
+
+setMethod("formatOutput", "WithVisValue",
+          function(object)
+      {
+          if(object@visible)
+              printed = capture.output(print(object@value))
+          else
+              printed = character()
+          new("FormattedOutput", value = printed, format = "text")
+      })
+
+
+setMethod("formatOutput", "WithVisPlusGraphics",
+          function(object)
+      {
+          if(object@visible)
+              printed = capture.output(print(object@value))
+          else
+              printed = character()
+          
+          val = new("FormattedOutput", value = printed, format = "text")
+          graphics = lapply(object@graphics, formatOutput)
+          as(unlist(list( graphics, val), recursive = FALSE), "FormattedOutputList")
+      })
 
 setMethod("formatOutput", "recordedplot",
           function(object)
           {
-              tpng = tempfile(fileext="png")
-              png(tpng)
-              redrawPlot(object)
-              dev.off()
-              stuff = readLines(tpng)
-              list(format="data_display", png=stuff)
+              .fimage(object, redrawPlot)
           })
 
 setMethod("formatOutput", "trellis",
           function(object)
           {
-              tpng = tempfile(fileext="png")
-              png(tpng)
-              print(object)
-              dev.off()
-              stuff = readLines(tpng)
-              list(format="data_display", png=stuff)
+              .fimage(object)
           })
 
 if(require(ggplot2))
@@ -56,18 +70,22 @@ if(require(ggplot2))
 setMethod("formatOutput", "ggplot",
           function(object)
           {
-              tpng = tempfile(fileext="png")
-              png(tpng)
-              print(object)
-              dev.off()
-              stuff = readLines(tpng)
-              list(format="data_display", png=stuff)
+              .fimage(object)
           })
 }
 
 setMethod("formatOutput", "NULL",
           function(object)
           {
-            list(content = "", format = "text")
+            new("FormattedOutput", value = character(), format = "text")
           })
 
+.fimage <- function(obj, disp_fun = print)
+{
+    tpng = tempfile(fileext="png")
+    png(tpng)
+    disp_fun(obj)
+    dev.off()
+    stuff = readBin(tpng, raw(), n = file.info(tpng)$size)
+    new("FormattedOutput", format="image_data", value=stuff, info = list(format = "png"))
+}    

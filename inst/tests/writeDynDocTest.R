@@ -6,3 +6,5 @@ doc =  readRmd(system.file("documents", "minimal.Rmd", package="DynDocModel"))
 thr = evalDynDoc(doc)
 
 writeDynDoc(doc = thr, file = "mdtestout.md", output.format = "md")
+
+writeDynDoc(doc = thr, file = "~/gabe/checkedout/ipython/ipynbtestout.ipynb", output.format = "ipynb")

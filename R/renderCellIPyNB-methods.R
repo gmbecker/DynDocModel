@@ -1,9 +1,12 @@
 setMethod("renderCellIPyNB", "CodeElement",
-          function(node, formatters, ...)
+          function(node, formatters, doOutputs = TRUE, ...)
           {
  
-            input = node$content
-            formspec = node$formatSpecific
+            input = list(node$content)
+            if("ipynb" %in% names(node$formatSpecific))
+                formspec = node$formatSpecific$ipynb
+            else
+                formspec = NULL
             ##TODO: someday thsi will involve changing the language element to R instead of adding the rmagic in the ipynb node, but not yet
             magic = NULL
             if(is(node, "RCodeElement"))
@@ -26,8 +29,10 @@ setMethod("renderCellIPyNB", "CodeElement",
             listout$metadata = node$attributes
             
             listout$cell_type = "code"
-            listout$input = paste(c(magic, node$content), collapse="\n")
-            listout$outputs = lapply(node$outputs, renderCellIPyNB, formatters = formatters, ...)
+            listout$language = "python"
+            listout$input = list(paste(c(magic, node$content), collapse="\n"))
+            if(doOutputs)
+                listout$outputs = lapply(node$outputs, renderCellIPyNB, formatters = formatters, ...)
             listout
           })
 
@@ -45,6 +50,7 @@ setMethod("renderCellIPyNB", "OutputElement",
             listout$text = paste(node$content, collapse="")
             listout
           })
+
 setMethod("renderCellIPyNB", "TextElement",
           function(node, formatters, ...)
           {
@@ -56,17 +62,39 @@ setMethod("renderCellIPyNB", "TextElement",
             
             listout$metadata = node$attributes
             listout$cell_type = if(is(node, "MDTextElement")) "markdown" else "raw"
-            listout$source = paste(node$content, collapse="\n")
+            listout$source = list(paste(node$content, collapse="\n"))
             listout
           })
+
+setMethod("renderCellIPyNB", "MixedMDElement",
+          function(node, formatters, ...)
+      {
+          warning("IPython Notebook does not currently support mixed prose/code cells. Treating cell as pure markup")
+          
+           if(!is.null(node$formatSpecific) && !is.null(null$formatSpecific$ipynb))
+              listout = do.call(list, node$formatSpecific$ipynb)
+            else
+              listout=list()
+          listout$metadata = node$attributes
+          listout$cell_type = "markdown"
+          listout$content = paste(sapply(node$children,
+                                          function(x) {
+                                              if(is(x, "InlineRCode"))
+                                                  paste0("`r ", x$content, "`")
+                                              else
+                                                  x$content
+                                          }), collapse = " ")
+          listout
+      })
 
 setMethod("renderCellIPyNB", "TaskElement",
           function(node, formatters, ...)
           {
-            if(!is.null(node$formatSpecific))
-              listout = do.call(list, node$formatSpecific)
-            else
-              listout=list()
+              if(!is.null(node$formatSpecific) && !is.null(null$formatSpecific$ipynb))
+                  listout = do.call(list, node$formatSpecific$ipynb)
+              else
+                  listout=list()
+            
             listout$metadata = node$attributes
             listout$cell_type = "task"
             listout$cells = lapply(node$children, renderCellIPyNB, formatters = formatters, ...)
@@ -76,29 +104,29 @@ setMethod("renderCellIPyNB", "TaskElement",
 setMethod("renderCellIPyNB", "BranchSetElement",
           function(node, formatters, ...)
           {
-            if(!is.null(node$formatSpecific))
-              listout = do.call(list, node$formatSpecific)
-            else
-              listout=list()
+              if(!is.null(node$formatSpecific) && !is.null(null$formatSpecific$ipynb))
+                  listout = do.call(list, node$formatSpecific$ipynb)
+              else
+                  listout=list()
 
-            listout$metadata = node$attributes
-            listout$cell_type = "altset"
-            listout$cells = lapply(node$children, renderCellIPyNB, formatters = formatters, ...)
-            listout
+              listout$metadata = node$attributes
+              listout$cell_type = "altset"
+              listout$cells = lapply(node$children, renderCellIPyNB, formatters = formatters, ...)
+              listout
           })
 
 setMethod("renderCellIPyNB", "BranchElement",
           function(node, formatters, ...)
           {
-            if(!is.null(node$formatSpecific))
-              listout = do.call(list, node$formatSpecific)
-            else
-              listout=list()
+              if(!is.null(node$formatSpecific) && !is.null(null$formatSpecific$ipynb))
+                  listout = do.call(list, node$formatSpecific$ipynb)
+              else
+                  listout=list()
 
-            listout$metadata = node$attributes
-            listout$cell_type = "alt"
-            listout$cells = lapply(node$children, renderCellIPyNB, formatters = formatters, ...)
-            listout
+              listout$metadata = node$attributes
+              listout$cell_type = "alt"
+              listout$cells = lapply(node$children, renderCellIPyNB, formatters = formatters, ...)
+              listout
           })
 
 
@@ -135,8 +163,9 @@ setMethod("renderCellIPyNB", "ElementInstance",
               
               listout$metadata = node$element$attributes
               listout$cell_type = getIPyCellType(node$element)
-              
-              if(length(node$children))
+
+              #XXX We'll need to do better once I put mixed cells into IPython notebook
+              if(length(node$children) && !is(node$element, "MixedTextElement" ))
                   {
                       listout$cells = lapply(node$children, renderCellIPyNB, formatters = formatters, ...)
                   }
@@ -147,9 +176,15 @@ setMethod("renderCellIPyNB", "ElementInstance",
                   }
               #XXX clobber the outputs with properly formatted ones. This is wasteful but should work for now without major infrastructure changes.
               if(length(node$outputs))
-                  listout$outputs = lapply(node$outputs, formatObject, formatters = formatters)
+              {
+                  listout$outputs = lapply(node$outputs, function(x) ipynbHandleFormatted(formatObject(x, formatters = formatters)))
+                  listout$outputs = listout$outputs[sapply(listout$outputs, function(x) length(x) > 0)]
+              }
               listout
           })
+
+
+
 
 setMethod("getIPyCellType", "TaskElement", function(el) "task")
 setMethod("getIPyCellType", "BranchSetElement", function(el) "altset")
@@ -158,6 +193,26 @@ setMethod("getIPyCellType", "TextElement", function(el) "raw")
 setMethod("getIPyCellType", "MDTextElement", function(el) "markdown")
 setMethod("getIPyCellType", "DbTextElement", function(el) stop("translation of Docbook into markdown/raw text not yet implemented"))
 setMethod("getIPyCellType", "MixedTextElement", function(el) stop("mixed content cell types are not (yet) supported in IPython Notebook"))
+setMethod("getIPyCellType", "MixedMDElement", function(el) "markdown")
 setMethod("getIPyCellType", "CodeElement", function(el) "code")
 setMethod("getIPyCellType", "IntCodeElement", function(el) "interactivecode")
 setMethod("getIPyCellType", "IntCodeElement", function(el) "interactivecode")
+
+ipynbHandleFormatted = function(fout)
+{
+    if(is(fout, "FormattedOutputList"))
+        return(unlist(lapply(fout, ipynbHandleFormatted), recursive = FALSE))
+
+    switch(fout@format,
+           text = list(metadata = emptyNamedList, output_type = "display_data", text = list(fout@value)),
+           image_data = list(metadata=emptyNamedList, output_type = "display_data", png = ipynbDoPNG(fout)),
+           null = emptyNamedList)
+
+}
+
+ipynbDoPNG = function(fout)
+{
+    if(!(fout@info$format == "png"))
+        stop("This image is not a png! other image formats are not yet supported")
+    base64encode(fout@value)
+}

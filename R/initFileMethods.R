@@ -20,7 +20,9 @@ initIPyNB = function(fname, doc)
     else
         formSpec = list()
     
-    out$metadata = c(meta, formSpec)
+    out$metadata = c(meta, formSpec$ipynb)
+    if(!("name" %in% names(out$metadata)))
+        out$metadata$name = ""
     out
 }
 

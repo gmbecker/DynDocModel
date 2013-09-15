@@ -7,4 +7,8 @@ thr = evalDynDoc(doc)
 
 writeDynDoc(doc = thr, file = "mdtestout.md", output.format = "md")
 
-writeDynDoc(doc = thr, file = "~/gabe/checkedout/ipython/ipynbtestout.ipynb", output.format = "ipynb")
+
+thr2 = evalDynDoc(getThread(doc, start = doc[[1]], end = doc[[4]]))
+
+
+writeDynDoc(doc = thr2, file = "~/gabe/checkedout/ipython/ipynbtestout.ipynb", output.format = "ipynb")

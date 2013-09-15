@@ -33,6 +33,7 @@ writeDynDoc = function(doc,
     init.output = getDefaultInit(output.format),
     finish.output = getDefaultFinish(output.format),
     addCell = getDefaultAddCell(output.format),
+    converters = list(),                    
     ...)
 {
     if(any(sapply(doc$children, function(x) is(x, "BranchSetElement"))))
@@ -56,15 +57,15 @@ writeDynDoc = function(doc,
         }
         
         if(is.function(cell.renderers))
-            rcell = cell.renderers(el, tmpformatters, state = state)
+            rcell = cell.renderers(el, tmpformatters, state = state, converters = converters)
         else
         {
             if(class(el) %in% names(foundRenderers))
-                rcell = foundRenderers[[class(el)]](el, tmpformatters, state = state)
+                rcell = foundRenderers[[class(el)]](el, tmpformatters, state = state, converters = converters)
             else
             {
                 meth = doListDispatch(class(el), cell.renderers)
-                rcell = meth(el, tmpformatters, state = state)
+                rcell = meth(el, tmpformatters, state = state, converters = converters)
                 foundRenderers[[class(el)]] = meth
             }
             

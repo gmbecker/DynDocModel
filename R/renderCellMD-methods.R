@@ -1,25 +1,24 @@
 #raw and markdown text gets spit out as is
 setMethod("renderCellMD", "TextElement",
-          function(node, formatters, state, inline = FALSE, ...)
+          function(node, formatters, state, converters = list(), inline = FALSE, ...)
       {
+          convCont <- switch(class(node),
+                             "MDTextElement" = node$content,
+                             "TextElement" = node$content,
+                             "DbTextElement" = convertContent(node$content, "docbook", "markdown", converters),
+                             "LatexTextElement" = convertContent(node$content, "latex", "markdown", converters),
+                             stop("unrecognized text element type: ", class(node))
+                             )
+          
           ret = node$content
+          
           if(!inline)
               ret = paste(c("\n", ret), collapse = "\n")
+          else
+              ret = paste(ret, collapse = "")
           ret
       })
 
-
- setMethod("renderCellMD", "LatexTextElement",
-           function(node, formatters, state,  ...)
-       {
-           stop("don't know how to transform latex into markdown")
-       })
-
-setMethod("renderCellMD", "DbTextElement",
-          function(node, formatters, state, ...)
-      {
-          stop("don't know how to transform docbook into markdown.")
-      })
 
 setMethod("renderCellMD", "RCodeElement",
           function(node, formatters, state, doOutput = FALSE, ...)

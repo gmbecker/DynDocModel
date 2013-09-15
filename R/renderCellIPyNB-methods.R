@@ -52,17 +52,30 @@ setMethod("renderCellIPyNB", "OutputElement",
           })
 
 setMethod("renderCellIPyNB", "TextElement",
-          function(node, formatters, ...)
+          function(node, formatters, converters = list(), ...)
           {
 
             if(!is.null(node$formatSpecific))
-              listout = do.call(list, node$formatSpecific)
+                listout = do.call(list, node$formatSpecific)
             else
-              listout=list()
+                listout=list()
             
             listout$metadata = node$attributes
-            listout$cell_type = if(is(node, "MDTextElement")) "markdown" else "raw"
-            listout$source = list(paste(node$content, collapse="\n"))
+            convCont <- switch(class(node),
+                               "MDTextElement" = node$content,
+                               "TextElement" = node$content,
+                               "DbTextElement" = convertContent(node$content, "docbook", "markdown", converters),
+                               "LatexTextElement" = convertContent(node$content, "latex", "markdown", converters),
+                               stop("unrecognized text element type: ", class(node))
+                               )
+            if(class(node) == "TextElement")
+                type = "raw"
+            else
+                type = "markdown"
+            listout$cell_type = type
+            
+            
+            listout$source = list(paste(convCont, collapse = "\n"))
             listout
           })
 

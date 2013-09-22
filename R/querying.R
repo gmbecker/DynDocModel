@@ -1,25 +1,33 @@
 
 #why are getThread and findPath different functions?? Will getThread eventually do something other than just call findPath?
 
-getThread = function(doc, start = 1, end = length(doc$elements), ...)
+getThread <- function(doc,
+                      start = 1,
+                      end = length(doc$elements),
+                      branches = NULL,
+                      branch_path = "/*/alt[1]",
+                      use_abbrev = TRUE, ...)
 {
+    if(is.null(branches) && !is.null(branch_path) && nchar(branch_path))
+        branches = dyndoc_rpath(doc, branch_path)
     if(is.numeric(start) || is.integer(start))
         start = doc[[start]]
     if(is.numeric(end) || is.integer(end))
         end = doc[[end]]
-    findPath(doc, start, end, ...)
-
+    findPath(doc, start, end, visit = branches,  ...)
+    
 }
 
-findPath = function(doc, start, end, ...)
+findPath = function(doc, start, end, visit, stop_on_fail = TRUE,...)
 {
     curlev = list()
     curel = end
-
+    
     while(!sameElement(start, curel))
     {
-        inst = makeInstance(curel, doKids = FALSE)
-
+        
+        inst = makeInstance(curel, doKids = FALSE, branchInstr = visit)
+        
         sibs = getSiblings(curel, posType = "before")
         if(length(sibs))
         {
@@ -32,46 +40,59 @@ findPath = function(doc, start, end, ...)
                 inst$children = curlev
                 curlev = list(inst)
             } else {
-                stop("Unable to determine path between start and end elements")
+                if(stop_on_fail)
+                    stop("Unable to determine path between start and end elements")
+                else
+                    return(NULL)
             }
         }
     }
-
+    
     curlev= c(start, curlev)
-
+    
     new("DocThread", children = curlev, parentDoc = doc, ...)
 }
 
 getSiblings = function(el, posType = c("all", "before", "after"))
-    {
-        if(!is(el$parent, "ContainerElement") & !is(el$parent, "DynDoc"))
-            return(list())
-
-        if(is(el$parent, "ContainerElement"))
-            sibs = el$parent$children
-        else
-            sibs = el$parent$elements
-
-        posType = match.arg(posType, c("all", "before", "after"))
-        inds  = switch(posType,
-                      all = -el$posInParent,
-                      before = if(el$posInParent ==1) numeric() else seq(1, el$posInParent -1),
-                      after = if(el$posInParent == length(sibs)) numeric() else seq(el$posInParent +1, length(sibs))
-        )
-        sibs[inds]
-
-
-  }
-
-makeInstance = function(el, branchInstr, doKids = TRUE)
 {
-    ret = new("ElementInstance", element = el)
-    if(is(el, "BranchSetElement") && doKids)
-   {
-       warning("Branching is not yet fully supported. Selecting 'first' branch to construct thread")
-       ret = makeInstance(el[[1]])
+    if(!is(el$parent, "ContainerElement") & !is(el$parent, "DynDoc"))
+        return(list())
+    
+    if(is(el$parent, "ContainerElement"))
+        sibs = el$parent$children
+    else
+        sibs = el$parent$elements
+    
+    posType = match.arg(posType, c("all", "before", "after"))
+    inds  = switch(posType,
+    all = -el$posInParent,
+    before = if(el$posInParent ==1) numeric() else seq(1, el$posInParent -1),
+    after = if(el$posInParent == length(sibs)) numeric() else seq(el$posInParent +1, length(sibs))
+    )
+    sibs[inds]
+    
+    
+}
 
-   } else if(is(el, "MixedTextElement") || (is(el, "ContainerElement") && doKids)) {
+makeInstance = function(el, branchInstr = list(), doKids = TRUE)
+{
+    ret = NULL
+                                        #   ret = new("ElementInstance", element = el)
+    if(is(el, "BranchSetElement"))
+    {
+                                        #       warning("Branching is not yet fully supported. Selecting 'first' branch to construct thread")
+ #      ret = makeInstance(el[[1]])
+        for(target in branchInstr)
+        {
+            found = any(sapply(el$children, sameElement, el2 = target))
+            if(found)
+                return(makeInstance(target))
+        }
+        ret = makeInstance(el[[1]])
+        
+    } else if(is(el, "MixedTextElement") || (is(el, "ContainerElement") && doKids)) {
+        
+        ret = new("ElementInstance", element = el)
         kids = vector("list", length(el$children))
         for(k in seq(along = el$children))
         {
@@ -81,7 +102,7 @@ makeInstance = function(el, branchInstr, doKids = TRUE)
     } else {
         ret = new("ElementInstance", element = el)
     }
-
+    
     ret
 }
 
@@ -89,103 +110,190 @@ makeInstance = function(el, branchInstr, doKids = TRUE)
 
 subquery = function(start, type=character(), attrs=list(), position=integer(), fun = NULL, all.levels = FALSE, parent=FALSE)
 {
-  if(!is.null(fun) && (length(type) || length(attrs) ))
-    warning("filter function (fun) and other attributes (type, attrs) were specified for subquery. Only filter function and position will be applied.")
-
-  #if we have multiple starting points, eg the output of a previous call to subquery, query each one one at a time and combine the results
-  if(is(start, "list"))
+    if(!is.null(fun) && (length(type) || length(attrs) ))
+        warning("filter function (fun) and other attributes (type, attrs) were specified for subquery. Only filter function and position will be applied.")
+    
+                                        #if we have multiple starting points, eg the output of a previous call to subquery, query each one one at a time and combine the results
+    if(is(start, "list"))
     {
-      ret = unlist(lapply(start, subquery, type=type, attrs = attrs, fun = fun, all.levels = all.levels), recursive=FALSE)
-      return(as(ret, "ElementList"))
+        ret = unlist(lapply(start, subquery, type=type, attrs = attrs, fun = fun, all.levels = all.levels), recursive=FALSE)
+        return(as(ret, "ElementList"))
     }
-
-  if(is(start, "DynDoc"))
+    
+    if(is(start, "DynDoc"))
     {
-      if(!parent)
-        els = start$elements
-      else
-        return(as(list(), "ElementList")) #there are no parents
-    }
-  else if (is(start, "ContainerElement"))
-    if(!parent)
-      els = start$children
-    else
-      {
-        if(is(start$parent, "DynDoc") || is.null(start$parent))
-          return(as(list(), "ElementList")) #there are no parent elements
+        if(!parent)
+            els = start$elements
         else
-          els = as(list(start$parent), "ElementList")
-      }
-  else
-    return(as(list(), "ElementList"))# we are at a terminal node, no children to check.
-
-   ret = els ##initialize to the full list, then pare down
-  if(!is.null(fun))
-    ret = ret[sapply(els, fun)]
-  else
-    {
-      if(length(type))
-        {
-          matches.type = sapply(ret, function(el) any(sapply(doAbbrevType(type), function(cl) is(el, cl))))
-        ret = ret[matches.type]
-        }
-      if (length(attrs))
-        {
-          matches.attr = sapply(ret, checkNodeAttrs, attrs = attrs)
-          ret = ret[matches.attr]
-        }
-      #This represents position in the result set, ie I want the third text element, NOT posInParent
-
+            return(as(list(), "ElementList")) #there are no parents
     }
-  if(all.levels)
-    #if we are searching through the whole (sub)tree, apply the same query to all children of start (this is recursive)
+    else if (is(start, "ContainerElement"))
+        if(!parent)
+            els = start$children
+        else
+        {
+            if(is(start$parent, "DynDoc") || is.null(start$parent))
+                return(as(list(), "ElementList")) #there are no parent elements
+            else
+                els = as(list(start$parent), "ElementList")
+        }
+  else
+      return(as(list(), "ElementList"))# we are at a terminal node, no children to check.
+
+    ret = els ##initialize to the full list, then pare down
+    if(!is.null(fun))
+        ret = ret[sapply(els, fun)]
+    else
+    {
+        if(length(type))
+        {
+            matches.type = sapply(ret, function(el) any(sapply(doAbbrevType(type), function(cl) is(el, cl))))
+            ret = ret[matches.type]
+        }
+        if (length(attrs))
+        {
+            matches.attr = sapply(ret, checkNodeAttrs, attrs = attrs)
+            ret = ret[matches.attr]
+        }
+                                        #This represents position in the result set, ie I want the third text element, NOT posInParent
+        
+    }
+    if(all.levels)
+                                        #if we are searching through the whole (sub)tree, apply the same query to all children of start (this is recursive)
     #This search is breadth first NOT depth first
-    ret = c(ret, subquery(els, type=type, attrs = attrs, fun=fun, all.levels=TRUE, parent = parent))
-  if(length(position))
+        ret = c(ret, subquery(els, type=type, attrs = attrs, fun=fun, all.levels=TRUE, parent = parent))
+    if(length(position))
     {
-      matches.pos = position[position < length(ret)]
-      ret = ret[matches.pos]
+        matches.pos = position[position < length(ret)]
+        ret = ret[matches.pos]
     }
-
-  return(as(ret, "ElementList"))
+    
+    return(as(ret, "ElementList"))
 }
 
 
 doAbbrevType = function(types)
-  {
+{
     sapply(types, function(ty)
-           {
-             switch(ty,
-                    code = "CodeElement",
-                    rcode = "RCodeElement",
-                    pycode = "PyCodeElement",
-                    text = "TextElement",
-                    markdown = "MDTextElement",
-                    md = "MDTextElement",
-                    docbook = "DbTextElement",
-                    db = "DbTextElement",
-                    task = "TaskElement",
-                    output = "OutputElement",
-                    altimpls = "AltImplSetElement",
-                    altimpl = "AltImplElement",
-                    altmeths = "AltMethodSetElement",
-                    altmeth = "AltMethodElement",
-                    sect = "SectionElement",
-                    branch = "BranchElement",
-                    branchset = "BranchSetElement",
-                    any = "DocElement", #any should match all nodes
-                    "*" = "DocElement",
-                    ty #by default assume node type was not abbreviated
-                    )
-           })
-  }
+       {
+           switch(ty,
+                  code = "CodeElement",
+                  rcode = "RCodeElement",
+                  pycode = "PyCodeElement",
+                  text = "TextElement",
+                  markdown = "MDTextElement",
+                  md = "MDTextElement",
+                  docbook = "DbTextElement",
+                  db = "DbTextElement",
+                  task = "TaskElement",
+                  output = "OutputElement",
+                  alt = "BranchElement",
+                  altset = "BranchSetElement",
+                  altimpls = "AltImplSetElement",
+                  altimpl = "AltImplElement",
+                  altmeths = "AltMethodSetElement",
+                  altmeth = "AltMethodElement",
+                  sect = "SectionElement",
+                  branch = "BranchElement",
+                  branchset = "BranchSetElement",
+                  any = "DocElement", #any should match all nodes
+                  "*" = "DocElement",
+                  ty #by default assume node type was not abbreviated
+                  )
+       })
+}
+
+doRevAbbrevType = function(abbrevs)
+{
+    sapply(abbrevs, function(abbrev)
+       {
+           switch(abbrev,
+                  CodeElement = "code",
+                  RCodeElement = "rcode",
+                  PyCodeElement = "pycode",
+                  TextElement = "text",
+                  MDTextEleemnt = "markdown",
+                  DbTextElement = "docbook",
+                  TaskElement = "task",
+                  OutputElement = "output",
+                  BranchElement = "alt",
+                  BranchSetElement = "altset",
+                  AltImplSetElement = "altimplset",
+                  AltImplElement = "altimpl",
+                  AltMethodSetElement = "altmethset",
+                  AltMethodElement = "altmeth",
+                  SectionElement = "sect",
+                  DocElement = "*",
+                  abbrev #by default assume node type was not abbreviated
+                  )
+       })
+}
 
 
 checkNodeAttrs = function(node, attrs)
-  {
+{
     ## Right now this will only check for full equality
     attrs = as.list(attrs)
     all(mapply(function(nm, val) all(node$field(nm) == val),
                nm = names(attrs),
                val = attrs))
-  }
+}
+
+
+#this implementation will probably be really slow
+getAllThreads = function(doc, start = 1 , end = length(doc$elements) , only_valid=TRUE)
+{
+    allbsets = dyndoc_rpath(doc, "//altset",  names_fun = dyndoc_rpath_abbrev2)
+    if(!length(allbsets))
+        return(list(getThread(doc)))
+    
+    rootInds = which(sapply(allbsets, firstBranchingSince))
+    rootBSets = allbsets[rootInds]
+    remaining = allbsets[-rootInds]
+    
+    branchInstr = expandBranches(doc)
+    lapply(branchInstr, function(instr) getThread(doc, start, end, branches = instr, check_valid = only_valid, stop_on_fail=FALSE))
+}
+
+
+
+expandBranches = function(parent)
+{
+    
+    altsets = getFirstBranchings(parent)
+    #if there aren't any more branchings
+    if(!length(altsets))
+        return()
+    
+    ret = list()
+    for(pt in altsets)
+    {
+        for(br in pt$children)
+        {
+            tmp = expandBranches(br)
+            for(inret in tmp)
+                ret = c(ret, c( br, inret))
+        }
+    }
+    ret
+}
+
+
+getFirstBranchings = function(el)
+{
+    if(!is(el, "ContainerElement") || !any(sapply(el$children, function(x) is(x, "ContainerElement"))))
+        return(list())
+
+    ret = list()
+    for(kid in el$children)
+    {
+        if(is(kid, "BranchSetElement"))
+            ret = c(ret, kid)
+        else
+            ret = c(ret, getFirstBranchings(kid))
+    }
+    ret
+}
+
+
+

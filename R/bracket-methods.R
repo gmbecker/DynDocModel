@@ -93,9 +93,4 @@ setMethod("[[<-", "ElementList",
             
           })
 
-
-#setMethod("[[", "ElementList",
-#          function(x, i, ...)
-#          {
-#            as(x, "list")[[i,...]]
-#          })
+ 

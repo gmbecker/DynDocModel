@@ -33,7 +33,7 @@ mdElFromIPN = function(el, parent)
   {
     newel = mdElement$new(content=el$source, parent = parent, attributes = el$metadata)
     parent$addChild(newel)
-    parent
+    newel
   }
 
 textElFromIPN = function(el, parent)
@@ -145,6 +145,9 @@ intcodeToIntCodeEl = function(code, parent)
 codeToCodeEl = function(code, parent, interactive = FALSE)
   {
     content = code$input
+    if(!length(content))
+        content = ""
+    
     language = code$language
     formatSpecific = code[!grepl("(input|outputs)", names(code))]
     if(language == "python" && length(grep("%%R", content)))

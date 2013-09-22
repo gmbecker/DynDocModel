@@ -50,10 +50,25 @@ doListDispatch = function(cl, lst, default = NULL,  classMap = NULL)
 
 #precedence f1 > f2 > defaults
 combineFormatters = function(fl1, fl2)
-    {
-        formatters = c(fl1, fl2)
-        formatters = formatters[!duplicated(names(formatters))]
-        formatters
-    }
+{
+    formatters = c(fl1, fl2)
+    formatters = formatters[!duplicated(names(formatters))]
+    formatters
+}
 
-        
+
+is_termBranch = function(br)
+{
+    attrs = dyndoc_attrs(br)
+    if("terminal" %in% names(attrs) && attrs[["terminal"]])
+        TRUE
+    else
+        FALSE
+}
+
+
+
+is_selfOrEl = function(obj, cl)
+{
+    is(obj, cl) || (is(obj, "ElementInstance") && is(obj$element, cl))
+}

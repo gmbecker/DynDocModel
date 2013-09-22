@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<article xmlns="http://docbook.org/ns/docbook" xmlns:r="http://www.r-project.org" version="5.0" xml:lang="en">
+  <sect1>
+    <title>Some R code and Prose</title>
+    <para>
+      This document was originally authored and stored in Temple Lang's <xml/>-based Rdb (Rdocbook) format.
+    </para>
+    <para>
+      We are going to run some basic R code within this document, to see how things go. Below we have some basic code which generates some random data and finds the correlation coefficient between each point and the mean of the distribution it was sampled from.
+      <r:code>
+	x = 1:10
+	y = rnorm(10, x)
+	cor(x,y)
+      </r:code>
+      That was pretty interesting. We now move on to plotting
+    </para>
+    <para>
+      We will now plot the variables x and y against eachother...
+      <r:code>
+	plot(x, y)
+      </r:code>	
+    </para>
+  </sect1>
+</article>
+

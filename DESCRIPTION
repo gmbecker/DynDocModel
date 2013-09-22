@@ -3,7 +3,8 @@ Version: 0.0-1
 Title: A Model for Dynamic Documents
 Description: A document model for non-linear dynamic documents implemented in R. This allows one to read in documents from a number of sources (knitr, IPython Notebooks, XDynDocs, etc) and operate on them, adding additional structure in the form of Tasks, branching structure (Alternative Implementations/Approaches for Tasks/subTasks), declared interactivity, etc.
 Author: Gabriel Becker
-Depends: methods, RAutoGenRunTime, RJSONIO, graph, Rgraphviz, RColorBrewer, CodeDepends, RCacheSuite, XML, markdown, base64enc, rpath
+Depends: methods,  Rgraphviz,  CodeDepends, RCacheSuite, rpath
+imports: RAutoGenRunTime, graph, RColorBrewer, XML, markdown, base64enc
 Suggests:  RUnit 
 Maintainer: Gabriel Becker <gmbecker@ucdavis.edu>
 License: GPL

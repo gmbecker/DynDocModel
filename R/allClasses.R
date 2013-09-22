@@ -424,44 +424,60 @@ headerSectElement = setRefClass("HeaderSectElement", contains = "SectionElement"
 #XXX do we want S4 classes or referenceClasses? We want evaluate(mythread) to both return the return value and change the thread, right? Is there a downside to using ReferenceClasses for this?
 
 
-elementInstance = setRefClass("ElementInstance",
-    fields = list(
-        element = "DocElement",
-        formatters = "list",
-        outputs = "list",
-        .children = "list",
-        envir = "environment",
-        children = function(value)
-        {
-            if(missing(value))
-                .children
-            else
-                replaceKids(value, .self)
-        },
-        .parentInstance = "ANY", #want Instances, but recursive class defs in R are hard
-        parentInstance = function(value)
-        {
-            if(missing(value))
-                .parentInstance
-            else
-                {
-                    .parentInstance <<- value
-                    parent.env(envir) <<- value$envir
-                    .cacheEngine <<- value$cacheEngine
-                    .parentInstance
-                }
-        },
-        posInParentInst = "numeric",
-        cacheEngine = "CachingEngine"),
-    methods = list(
-        initialize = function(envir, ...)
-        {
-            if(missing(envir))
-                env = new.env()
-            else
-                env = envir
-            callSuper(envir = env, ...)
-        })
+elementInstance <- setRefClass("ElementInstance",
+                               fields = list(
+                               element = "DocElement",
+                               formatters = "list",
+                               outputs = "list",
+                               .children = "list",
+                               envir = "environment",
+                               children = function(value)
+                           {
+                               if(missing(value))
+                                   .children
+                               else
+                                   replaceKids(value, .self)
+                           },
+                               .parentInstance = "ANY", #want Instances, but recursive class defs in R are hard
+                               parentInstance = function(value)
+                           {
+                               if(missing(value))
+                                   .parentInstance
+                               else
+                               {
+                                   .parentInstance <<- value
+                                   parent.env(envir) <<- value$envir
+                                   .cacheEngine <<- value$cacheEngine
+                                   .parentInstance
+                               }
+                           },
+                               posInParentInst = "numeric",
+                               cacheEngine = "CachingEngine"),
+                               methods = list(
+                               initialize = function(envir, instanceChildren = TRUE, ...)
+                           {
+                               if(missing(envir))
+                                   env = new.env()
+                               else
+                                   env = envir
+                               callSuper(envir = env, ...)
+                               if(instanceChildren)
+                                   .self$instanceChildren()
+                               .self
+                           },
+                               instanceChildren = function()
+                           {
+                               if(!is(element, "Container"))
+                                   return()
+                               kids = vector("list", length(element$children))
+                               for(k in seq(kids))
+                               {
+                                   kids[[k]] = makeInstance(element$children[[k]])
+                               }
+                               children <<- kids
+                           }
+
+                               )
     )
 
 setRefClass("ContainerInstance", contains = "ElementInstance")

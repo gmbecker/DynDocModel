@@ -1,1 +1,8 @@
+import(RAutoGenRunTime)
+import(graph)
+import(RColorBrewer)
+import(XML)
+import(markdown)
+import(base64enc)
+import(RJSONIO)
 exportPattern(".*")

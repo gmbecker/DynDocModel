@@ -1,6 +1,6 @@
 
 #convenience function so I can have the right default driver functions
-dyndoc_rpath = function(obj, path, names_fun = dyndoc_rpath_abbrevs, term_condition = dyndoc_rpath_term, attr_fun = dyndoc_rpath_attr)
+dyndoc_rpath = function(obj, path, names_fun = dyndoc_rpath_abbrevs, term_condition = dyndoc_rpath_term, attr_fun = dyndoc_attrs)
 {
     rpath(obj, path, names_fun = names_fun, term_condition = term_condition,attr_fun = attr_fun)
 }
@@ -29,8 +29,14 @@ dyndoc_rpath_classes = function(obj)
 
 dyndoc_rpath_abbrevs = function(obj)
 {
-    doRevAbbrevType(dyndoc_rpath_classes(obj))
+    classToAbbrev(dyndoc_rpath_classes(obj))
 }
+
+dyndoc_rpath_abbrevs2 = function(obj)
+{
+    classToAbbrev2(dyndoc_rpath_classes(obj))
+}
+
 
 dyndoc_rpath_term = function(obj)
 {
@@ -38,34 +44,39 @@ dyndoc_rpath_term = function(obj)
 }
 
 
-setGeneric("dyndoc_rpath_attr", function(obj) standardGeneric("dyndoc_rpath_attr"))
+setGeneric("dyndoc_attrs", function(obj) standardGeneric("dyndoc_attrs"))
 
-setMethod("dyndoc_rpath_attr", "RCodeElement",
+setMethod("dyndoc_attrs", "RCodeElement",
           function(obj)
       {
-          c(obj$attributes, obj$formatSpecific, position = posInParent, id = obj$id, invars = obj$invars, outvars = obj$outvars, content = obj$content)
+          ret = c(obj$attributes, obj$formatSpecific, position = obj$posInParent, id = obj$id, invars = obj$invars, outvars = obj$outvars, content = obj$content)
+          as.list(ret)
       })
 
-setMethod("dyndoc_rpath_attr", "DocElement",
+setMethod("dyndoc_attrs", "DocElement",
           function(obj)
       {
-          c(obj$attributes, obj$formatSpecific, position = posInParent, id = obj$id)
+          ret = c(obj$attributes, obj$formatSpecific, position = obj$posInParent, id = obj$id)
+          as.list(ret)
       })
 
-setMethod("dyndoc_rpath_attr", "TextElement",
+setMethod("dyndoc_attrs", "TextElement",
           function(obj)
       {
-          c(obj$attributes, obj$formatSpecific, position = posInParent, id = obj$id, content = obj$content)
+          ret = c(obj$attributes, obj$formatSpecific, position = obj$posInParent, id = obj$id, content = obj$content)
+          as.list(ret)
       })
 
-setMethod("dyndoc_rpath_attr", "ElementInstance",
+setMethod("dyndoc_attrs", "ElementInstance",
           function(obj)
       {
-          ret = dyndoc_rpath_attr(obj$element)
+          ret = dyndoc_attrs(obj$element)
           ret$outputs = obj$outputs
-          ret$position = obj$posInParent
+          ret$doc_position = ret$position
+          ret$position = obj$posInParentInst
+          as.list(ret)
       })
 
-setMethod("dyndoc_rpath_attr", "ANY", function(obj) list())
+setMethod("dyndoc_attrs", "ANY", function(obj) list())
 
     

@@ -6,7 +6,8 @@ getThread <- function(doc,
                       end = length(doc$elements),
                       branches = NULL,
                       branch_path = "/*/alt[1]",
-                      use_abbrev = TRUE, ...)
+                      use_abbrev = TRUE,
+                      check_valid = TRUE, ...)
 {
     if(is.null(branches) && !is.null(branch_path) && nchar(branch_path))
         branches = dyndoc_rpath(doc, branch_path)
@@ -14,19 +15,19 @@ getThread <- function(doc,
         start = doc[[start]]
     if(is.numeric(end) || is.integer(end))
         end = doc[[end]]
-    findPath(doc, start, end, visit = branches,  ...)
+    findPath(doc, start, end, visit = branches, check_valid = check_valid, ...)
     
 }
 
-findPath = function(doc, start, end, visit, stop_on_fail = TRUE,...)
+findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = TRUE, ...)
 {
     curlev = list()
     curel = end
     
     while(!sameElement(start, curel))
     {
-        
-        inst = makeInstance(curel, doKids = FALSE, branchInstr = visit)
+#        inst = makeInstance(curel, doKids = FALSE, branchInstr = visit)
+        inst = makeInstance(curel,  branchInstr = visit)
         
         sibs = getSiblings(curel, posType = "before")
         if(length(sibs))
@@ -50,6 +51,18 @@ findPath = function(doc, start, end, visit, stop_on_fail = TRUE,...)
     
     curlev= c(start, curlev)
     
+    if(check_valid)
+    {
+        terms = sapply(curlev[-length(curlev)], function(x) is_termBranch(x))
+        if(any(terms))
+        {
+            if(stop_on_fail)
+                stop("Detected path passes through a terminal branch.")
+            else
+                return(NULL)
+        }
+    }
+
     new("DocThread", children = curlev, parentDoc = doc, ...)
 }
 
@@ -70,37 +83,41 @@ getSiblings = function(el, posType = c("all", "before", "after"))
     after = if(el$posInParent == length(sibs)) numeric() else seq(el$posInParent +1, length(sibs))
     )
     sibs[inds]
-    
-    
 }
 
 makeInstance = function(el, branchInstr = list(), doKids = TRUE)
 {
+    if(is(el, "ElementInstance"))
+    {
+        if(is_selfOrEl(el, "ContainerElement") && doKids && !length(el$children))
+            el$instanceChildren()
+        return(el)
+    }
+    
     ret = NULL
-                                        #   ret = new("ElementInstance", element = el)
+    
     if(is(el, "BranchSetElement"))
     {
-                                        #       warning("Branching is not yet fully supported. Selecting 'first' branch to construct thread")
- #      ret = makeInstance(el[[1]])
+ 
         for(target in branchInstr)
         {
             found = any(sapply(el$children, sameElement, el2 = target))
             if(found)
-                return(makeInstance(target))
+                return(makeInstance(target, doKids = doKids))
         }
-        ret = makeInstance(el[[1]])
+        ret = makeInstance(el[[1]], doKids = doKids)
         
     } else if(is(el, "MixedTextElement") || (is(el, "ContainerElement") && doKids)) {
         
-        ret = new("ElementInstance", element = el)
-        kids = vector("list", length(el$children))
-        for(k in seq(along = el$children))
-        {
-            kids[[k]] = makeInstance(el$children[[k]])
-        }
-        ret$children = kids
+        ret = new("ElementInstance", element = el, instanceChildren = TRUE)
+#        kids = vector("list", length(el$children))
+ #       for(k in seq(along = el$children))
+  #      {
+   #         kids[[k]] = makeInstance(el$children[[k]])
+    #    }
+     #   ret$children = kids
     } else {
-        ret = new("ElementInstance", element = el)
+        ret = new("ElementInstance", element = el, instanceChildren = FALSE)
     }
     
     ret
@@ -172,63 +189,6 @@ subquery = function(start, type=character(), attrs=list(), position=integer(), f
 }
 
 
-doAbbrevType = function(types)
-{
-    sapply(types, function(ty)
-       {
-           switch(ty,
-                  code = "CodeElement",
-                  rcode = "RCodeElement",
-                  pycode = "PyCodeElement",
-                  text = "TextElement",
-                  markdown = "MDTextElement",
-                  md = "MDTextElement",
-                  docbook = "DbTextElement",
-                  db = "DbTextElement",
-                  task = "TaskElement",
-                  output = "OutputElement",
-                  alt = "BranchElement",
-                  altset = "BranchSetElement",
-                  altimpls = "AltImplSetElement",
-                  altimpl = "AltImplElement",
-                  altmeths = "AltMethodSetElement",
-                  altmeth = "AltMethodElement",
-                  sect = "SectionElement",
-                  branch = "BranchElement",
-                  branchset = "BranchSetElement",
-                  any = "DocElement", #any should match all nodes
-                  "*" = "DocElement",
-                  ty #by default assume node type was not abbreviated
-                  )
-       })
-}
-
-doRevAbbrevType = function(abbrevs)
-{
-    sapply(abbrevs, function(abbrev)
-       {
-           switch(abbrev,
-                  CodeElement = "code",
-                  RCodeElement = "rcode",
-                  PyCodeElement = "pycode",
-                  TextElement = "text",
-                  MDTextEleemnt = "markdown",
-                  DbTextElement = "docbook",
-                  TaskElement = "task",
-                  OutputElement = "output",
-                  BranchElement = "alt",
-                  BranchSetElement = "altset",
-                  AltImplSetElement = "altimplset",
-                  AltImplElement = "altimpl",
-                  AltMethodSetElement = "altmethset",
-                  AltMethodElement = "altmeth",
-                  SectionElement = "sect",
-                  DocElement = "*",
-                  abbrev #by default assume node type was not abbreviated
-                  )
-       })
-}
-
 
 checkNodeAttrs = function(node, attrs)
 {
@@ -243,56 +203,101 @@ checkNodeAttrs = function(node, attrs)
 #this implementation will probably be really slow
 getAllThreads = function(doc, start = 1 , end = length(doc$elements) , only_valid=TRUE)
 {
-    allbsets = dyndoc_rpath(doc, "//altset",  names_fun = dyndoc_rpath_abbrev2)
-    if(!length(allbsets))
-        return(list(getThread(doc)))
+#    allbsets = dyndoc_rpath(doc, "//altset",  names_fun = dyndoc_rpath_abbrevs2)
+ #   if(!length(allbsets))
+  #      return(list(getThread(doc)))
     
-    rootInds = which(sapply(allbsets, firstBranchingSince))
-    rootBSets = allbsets[rootInds]
-    remaining = allbsets[-rootInds]
+   # rootInds = which(sapply(allbsets, firstBranchingSince))
+    #rootBSets = allbsets[rootInds]
+    #remaining = allbsets[-rootInds]
     
     branchInstr = expandBranches(doc)
+    if(!length(branchInstr))
+        branchInstr = list(list())
+    
     lapply(branchInstr, function(instr) getThread(doc, start, end, branches = instr, check_valid = only_valid, stop_on_fail=FALSE))
 }
 
 
 
-expandBranches = function(parent)
+expandBranches = function(parent, prev = list())
 {
     
     altsets = getFirstBranchings(parent)
     #if there aren't any more branchings
-    if(!length(altsets))
-        return()
+   # if(!length(altsets))
+    #    return(list())
     
-    ret = list()
+  #  if(length(prev))
+         ret = list(prev)
+   # else
+    #    ret = list()
+
     for(pt in altsets)
     {
+        onestep = list()
         for(br in pt$children)
-        {
-            tmp = expandBranches(br)
-            for(inret in tmp)
-                ret = c(ret, c( br, inret))
-        }
+            onestep = c(onestep,  expandBranches(br, prev = list(br)))
+        ret = allCombos(ret, onestep)
+     #   tmp =lapply(pt$children, function(br) expandBranches(br, list(br)))
+        
+      #  ret = addToAll(ret, tmp, both = TRUE)
     }
     ret
 }
 
-
-getFirstBranchings = function(el)
+allCombos = function(lst, add, rev = FALSE)
 {
-    if(!is(el, "ContainerElement") || !any(sapply(el$children, function(x) is(x, "ContainerElement"))))
+    ret = rep(lst, times = length(add))
+    toadd = rep(add, times = rep(length(lst), times = length(add)))
+    mapply(function(x,y) if(!rev) c(x,y) else c(y,x) , ret, toadd, SIMPLIFY = FALSE)
+}
+
+
+
+setGeneric("getFirstBranchings", function(el, found = NULL) standardGeneric("getFirstBranchings"))
+
+setMethod("getFirstBranchings", "ContainerElement",
+          function(el, found) {
+              .getFirstBranchings(el$children, found)
+          })
+
+
+setMethod("getFirstBranchings", "DynDoc",
+          function(el, found) {
+              .getFirstBranchings(el$elements, found)
+          })
+
+setMethod("getFirstBranchings", "DocElement",
+          function(el, found) {
+              list()
+          })
+
+setMethod("getFirstBranchings", "ElementInstance",
+          function(el) {
+              .getFirstBranchings(el$children, found)
+          })
+          
+
+ 
+
+.getFirstBranchings = function(kids, found = list())
+{
+    possible = sapply(kids, function(x) is_selfOrEl(x, "ContainerElement"))
+    
+    if(!any(possible))
         return(list())
 
     ret = list()
-    for(kid in el$children)
+    fnd = list()
+    for(kid in kids[possible])
     {
-        if(is(kid, "BranchSetElement"))
-            ret = c(ret, kid)
+        if(is_selfOrEl(kid, "BranchSetElement"))
+            fnd = c(fnd, kid)
         else
-            ret = c(ret, getFirstBranchings(kid))
+            fnd = getFirstBranchings(kid, found = fnd)
     }
-    ret
+    unlist(c(found, fnd))
 }
 
 

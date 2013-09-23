@@ -14,3 +14,5 @@ nested = readIPyNotebook(system.file("documents/NestedBranching.ipynb", package=
 instr = expandBranches(nested)
 
 allthr = getAllThreads(nested)
+
+res = sapply(allthr, evalDynDoc, value=TRUE)

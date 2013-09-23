@@ -9,7 +9,7 @@ setMethod("evalDynDoc", "DocThread",
               for(el in obj$children)
                   {
                       res = evalDynDoc(el, eval = eval, env = env, cache = obj$cacheEngine, value = TRUE, ...)
-                      if(is(el$element, "CodeElement"))
+                      if(is(el$element, "CodeElement")||is(el$element, "ContainerElement"))
                          {
                              if(!is(res, "OutputList"))
                                  res = as(list(res), "OutputList")
@@ -32,8 +32,7 @@ setMethod("evalDynDoc", "ElementInstance",
                   {
                       for(nd in obj$children)
                           {
-                              args = list(obj = nd, eval = eval, env = env, ...)
-                              res = evalDynDoc(nd, eval, env,value = value, ...)
+                              res = evalDynDoc(nd, eval, env,value = TRUE, ...)
                             
                               #only instances of code elements get output!
                               if(is(nd$element, "CodeElement"))
@@ -51,7 +50,7 @@ setMethod("evalDynDoc", "ElementInstance",
                           return(obj)
                   }
               el = obj$element
-              args = list(obj = el, eval = eval, env = env, value = value,...)
+              args = list(obj = el, eval = eval, env = env, value = TRUE,...)
               if(!"cache" %in% names(args))
                   args$cache = obj$cacheEngine
 
@@ -84,7 +83,7 @@ setMethod("evalDynDoc", "ContainerElement",
                   {
                       args = list(obj = nd, eval = eval, env = env, ...)
                       if(is(nd, "CodeElement") || is(nd, "ContainerElement")) {
-                          res = evalDynDoc(nd, eval, env,value = value, ...)
+                          res = evalDynDoc(nd, eval, env,value = TRUE, ...)
                           if(!is(res, "OutputList"))
                               res = as(list(res), "OutputList")
                           

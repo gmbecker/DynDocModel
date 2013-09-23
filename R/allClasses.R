@@ -445,34 +445,37 @@ elementInstance <- setRefClass("ElementInstance",
                                    .parentInstance
                                else
                                {
+                                   
                                    .parentInstance <<- value
-                                   parent.env(envir) <<- value$envir
-                                   .cacheEngine <<- value$cacheEngine
+                                   if(!is.null(value)) {
+                                       parent.env(envir) <<- value$envir
+                                       .cacheEngine <<- value$cacheEngine
+                                   }
                                    .parentInstance
                                }
                            },
                                posInParentInst = "numeric",
                                cacheEngine = "CachingEngine"),
                                methods = list(
-                               initialize = function(envir, instanceChildren = TRUE, ...)
+                               initialize = function(envir, doChildren = TRUE, branchInstructs = list(), ...)
                            {
                                if(missing(envir))
                                    env = new.env()
                                else
                                    env = envir
                                callSuper(envir = env, ...)
-                               if(instanceChildren)
-                                   .self$instanceChildren()
+                               if(doChildren)
+                                   .self$instanceChildren(branchInstructs)
                                .self
                            },
-                               instanceChildren = function()
+                               instanceChildren = function(branchInstructs)
                            {
-                               if(!is(element, "Container"))
+                               if(!is(element, "ContainerElement"))
                                    return()
                                kids = vector("list", length(element$children))
                                for(k in seq(kids))
                                {
-                                   kids[[k]] = makeInstance(element$children[[k]])
+                                   kids[[k]] = makeInstance(element$children[[k]], branchInstructs)
                                }
                                children <<- kids
                            }

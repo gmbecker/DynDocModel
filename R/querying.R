@@ -7,19 +7,22 @@ getThread <- function(doc,
                       branches = NULL,
                       branch_path = "/*/alt[1]",
                       use_abbrev = TRUE,
-                      check_valid = TRUE, ...)
+                      check_valid = TRUE,
+                      cache = doc$cacheEngine,
+                      ...)
 {
+
     if(is.null(branches) && !is.null(branch_path) && nchar(branch_path))
         branches = dyndoc_rpath(doc, branch_path)
     if(is.numeric(start) || is.integer(start))
         start = doc[[start]]
     if(is.numeric(end) || is.integer(end))
         end = doc[[end]]
-    findPath(doc, start, end, visit = branches, check_valid = check_valid, ...)
+    findPath(doc, start, end, visit = branches, check_valid = check_valid, cacheEngine = cache, ...)
     
 }
 
-findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = TRUE, ...)
+findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = TRUE, cacheEngine = doc$cacheEngine, ...)
 {
     curlev = list()
     curel = end
@@ -27,7 +30,7 @@ findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = T
     while(!sameElement(start, curel))
     {
 #        inst = makeInstance(curel, doKids = FALSE, branchInstr = visit)
-        inst = makeInstance(curel,  branchInstr = visit)
+        inst = makeInstance(curel,  branchInstr = visit, doKids = TRUE, cacheEngine = cacheEngine)
         
         sibs = getSiblings(curel, posType = "before")
         if(length(sibs))
@@ -63,7 +66,7 @@ findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = T
         }
     }
 
-    new("DocThread", children = curlev, parentDoc = doc, ...)
+    new("DocThread", children = curlev, parentDoc = doc, cacheEngine = cacheEngine, ...)
 }
 
 getSiblings = function(el, posType = c("all", "before", "after"))
@@ -85,7 +88,7 @@ getSiblings = function(el, posType = c("all", "before", "after"))
     sibs[inds]
 }
 
-makeInstance = function(el, branchInstr = list(), doKids = TRUE)
+makeInstance = function(el, branchInstr = list(), doKids = TRUE, doBranchSets = FALSE, ...)
 {
     if(is(el, "ElementInstance"))
     {
@@ -103,21 +106,15 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE)
         {
             found = any(sapply(el$children, sameElement, el2 = target))
             if(found)
-                return(makeInstance(target, doKids = doKids))
+                return(makeInstance(target, doKids = TRUE, ..., branchInstr = branchInstr))
         }
-        ret = makeInstance(el[[1]], doKids = doKids)
+        ret = makeInstance(el[[1]], doKids = TRUE, branchInstr= branchInstr, ...)
         
-    } else if(is(el, "MixedTextElement") || (is(el, "ContainerElement") && doKids)) {
+    }else if(is(el, "MixedTextElement") || (is(el, "ContainerElement") && doKids)) {
         
-        ret = new("ElementInstance", element = el, instanceChildren = TRUE)
-#        kids = vector("list", length(el$children))
- #       for(k in seq(along = el$children))
-  #      {
-   #         kids[[k]] = makeInstance(el$children[[k]])
-    #    }
-     #   ret$children = kids
+        ret = new("ElementInstance", element = el, doChildren = TRUE, branchInstructs = branchInstr, ...)
     } else {
-        ret = new("ElementInstance", element = el, instanceChildren = FALSE)
+        ret = new("ElementInstance", element = el, doChildren = FALSE, ...)
     }
     
     ret
@@ -215,7 +212,7 @@ getAllThreads = function(doc, start = 1 , end = length(doc$elements) , only_vali
     if(!length(branchInstr))
         branchInstr = list(list())
     
-    lapply(branchInstr, function(instr) getThread(doc, start, end, branches = instr, check_valid = only_valid, stop_on_fail=FALSE))
+    lapply(branchInstr, function(instr) getThread(doc, start = start, end = end, branches = instr, check_valid = only_valid, stop_on_fail=FALSE))
 }
 
 
@@ -302,3 +299,26 @@ setMethod("getFirstBranchings", "ElementInstance",
 
 
 
+
+
+
+
+containerToKids = function(inst)
+{
+    kids = list()
+    for(el in inst$children)
+    {
+        if(!length(el$children))
+            kids = c(kids, el)
+        else
+            kids = c(kids, containerToKids(el))
+    }
+    unlist(kids)
+}
+
+collapseThread = function(thread)
+{
+    kids = containerToKids(thread)
+    thread$children = kids
+    thread
+}

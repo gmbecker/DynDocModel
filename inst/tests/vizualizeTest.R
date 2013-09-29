@@ -10,3 +10,6 @@ png(filename="taskvis.png")
 makeDocumentGraph(ipn2,taskpalette = c("green", "lightgreen", "lightblue", "blue"))
 dev.off()
 
+nested = readDynDoc(system.file("documents/NestedBranching.ipynb", package="DynDocModel"))
+
+makeDocumentGraph(nested)

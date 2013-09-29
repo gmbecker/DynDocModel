@@ -83,10 +83,10 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
     names(shapes) = nms
     names(colors) = nms
     ret = graphNEL(nodes = names(graphlist), edgeL = graphlist, edgemode = "directed")
-    print(as.list(colors))
-    nodeRenderInfo(ret) = list(shape = shapes, fill="red")
-   # nodeRenderInfo(ret) = list(fill = colors)
+#    nodeRenderInfo(ret) = list(shape = shapes, fill="red")
+
     lout = layoutGraph(ret)
+    nodeRenderInfo(lout) = list(shape = shapes, fill=colors)
     renderGraph(lout)
     lout
     

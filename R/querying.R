@@ -104,10 +104,11 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE, doBranchSets = 
  
         for(target in branchInstr)
         {
-            found = any(sapply(el$children, sameElement, el2 = target))
-            if(found)
-                return(makeInstance(target, doKids = TRUE, ..., branchInstr = branchInstr))
+            found = sapply(el$children, sameElement, el2 = target)
+            if(any(found))
+                return(makeInstance(target, doKids = TRUE, ..., branchInstr = branchInstr[!found]))
         }
+        warning("No branch selection instructions for this set of branches. Selecting first branch.")
         ret = makeInstance(el[[1]], doKids = TRUE, branchInstr= branchInstr, ...)
         
     }else if(is(el, "MixedTextElement") || (is(el, "ContainerElement") && doKids)) {
@@ -212,7 +213,8 @@ getAllThreads = function(doc, start = 1 , end = length(doc$elements) , only_vali
     if(!length(branchInstr))
         branchInstr = list(list())
     
-    lapply(branchInstr, function(instr) getThread(doc, start = start, end = end, branches = instr, check_valid = only_valid, stop_on_fail=FALSE))
+    ret = lapply(branchInstr, function(instr) getThread(doc, start = start, end = end, branches = instr, check_valid = only_valid, stop_on_fail=FALSE))
+    as(ret, "ThreadList")
 }
 
 

@@ -19,9 +19,11 @@ setMethod("widgetToIPyNBList", "IWidgetNumTextbox", function(widget)
           })
 
 IPyNBWidgetToWidget = function(l)
-  {
+{
+    if(is(l, "character"))
+        l = as.list(l)
     ret = switch(l$type,
-      slider = new("IWidgetSlider", step=l$step, range = c(l$min, l$max)),
+      slider = new("IWidgetSlider", step=as.numeric(l$step), range = c(as.numeric(l$min), as.numeric(l$max) ) ),
       textbox = new("IWidgetTextbox"),
       inttextbox = new("IWidgetIntTextbox"),
       numtextbox = new("IWidgetNumTextbox"),
@@ -29,6 +31,8 @@ IPyNBWidgetToWidget = function(l)
       )
     ret@var = l$variable
     ret@linenum = as.integer(l$linenum)
+    if(is(ret, "IWidgetSlider") || is(ret, "IWidgetNumTextbox"))
+        l$defaultvalue = as.numeric(l$defaultvalue)
     ret@default = l$defaultvalue
     ret
   }

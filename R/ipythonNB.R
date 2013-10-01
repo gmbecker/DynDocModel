@@ -120,9 +120,10 @@ intcodeToIntCodeEl = function(code, parent)
         #don't include \\n
         if(length(content) == 1)
           {
-            formatSpecific$rmagicLine = gsub("(%%R[^\\n]*)\\n.*", "\\1", content)
+           # formatSpecific$rmagicLine = gsub("(%%R[^\\n]*)\\n.*", "\\1", content)
+              formatSpecific$rmagicLine = gsub("(%%R[^\n]*)\n.*", "\\1", content)
                                         #do include \\n
-            content = gsub("%%R[^\\n]*\\n", "", content)
+            content = gsub("%%R[^\n]*\n", "", content)
           } else {
             #if it is on multiple lines the %%R must be the first
             formatSpecific$rmagicLine = content[1]

@@ -3,7 +3,7 @@ setOldClass("ggplot")
 setClass("ElementList", contains="list")
 setClassUnion("ListOrNull", members = c("list", "NULL"))
 setClass("OutputList", contains = "list")
-
+setClass("ThreadList", contains = "list")
 setClass("FormattedOutput", representation(value = "ANY", format = "character", info = "list"))
 setClass("FormattedOutputList", contains = "list", valid = function(object) all(sapply(object, is, "FormattedOutput")))
 

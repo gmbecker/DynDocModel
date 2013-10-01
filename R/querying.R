@@ -88,7 +88,7 @@ getSiblings = function(el, posType = c("all", "before", "after"))
     sibs[inds]
 }
 
-makeInstance = function(el, branchInstr = list(), doKids = TRUE, doBranchSets = FALSE, ...)
+makeInstance = function(el, branchInstr = list(), doKids = TRUE, doBranchSets = FALSE, cacheEngine = el$cacheEngine, ...)
 {
     if(is(el, "ElementInstance"))
     {
@@ -106,16 +106,16 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE, doBranchSets = 
         {
             found = sapply(el$children, sameElement, el2 = target)
             if(any(found))
-                return(makeInstance(target, doKids = TRUE, ..., branchInstr = branchInstr[!found]))
+                return(makeInstance(target, doKids = TRUE, ..., branchInstr = branchInstr[!found], cacheEngine = cacheEngine))
         }
         warning("No branch selection instructions for this set of branches. Selecting first branch.")
-        ret = makeInstance(el[[1]], doKids = TRUE, branchInstr= branchInstr, ...)
+        ret = makeInstance(el[[1]], doKids = TRUE, branchInstr= branchInstr, cacheEngine = cacheEngine, ...)
         
     }else if(is(el, "MixedTextElement") || (is(el, "ContainerElement") && doKids)) {
         
-        ret = new("ElementInstance", element = el, doChildren = TRUE, branchInstructs = branchInstr, ...)
+        ret = new("ElementInstance", element = el, doChildren = TRUE, branchInstructs = branchInstr, cacheEngine = cacheEngine, ...)
     } else {
-        ret = new("ElementInstance", element = el, doChildren = FALSE, ...)
+        ret = new("ElementInstance", element = el, doChildren = FALSE, cacheEngine = cacheEngine, ...)
     }
     
     ret
@@ -253,6 +253,8 @@ allCombos = function(lst, add, rev = FALSE)
 }
 
 
+if(FALSE)
+{
 
 setGeneric("getFirstBranchings", function(el, found = NULL) standardGeneric("getFirstBranchings"))
 
@@ -277,8 +279,17 @@ setMethod("getFirstBranchings", "ElementInstance",
               .getFirstBranchings(el$children, found)
           })
           
-
- 
+}
+getFirstBranchings = function(el, found = NULL)
+{
+    kids = list()
+    if(is(el, "DynDoc"))
+        kids = el$elements
+    else if (is(el, "ContainerElement") || is(el, "ElementInstance"))
+        kids = el$children
+    
+    .getFirstBranchings(kids, found)
+}
 
 .getFirstBranchings = function(kids, found = list())
 {

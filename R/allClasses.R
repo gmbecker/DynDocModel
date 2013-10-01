@@ -449,7 +449,7 @@ elementInstance <- setRefClass("ElementInstance",
                                    .parentInstance <<- value
                                    if(!is.null(value)) {
                                        parent.env(envir) <<- value$envir
-                                       .cacheEngine <<- value$cacheEngine
+                                       cacheEngine <<- value$cacheEngine
                                    }
                                    .parentInstance
                                }
@@ -457,25 +457,25 @@ elementInstance <- setRefClass("ElementInstance",
                                posInParentInst = "numeric",
                                cacheEngine = "CachingEngine"),
                                methods = list(
-                               initialize = function(envir, doChildren = TRUE, branchInstructs = list(), ...)
+                               initialize = function(envir, doChildren = TRUE, branchInstructs = list(), element, cacheEngine = element$cacheEngine, ...)
                            {
                                if(missing(envir))
                                    env = new.env()
                                else
                                    env = envir
-                               callSuper(envir = env, ...)
+                               callSuper(envir = env, element = element, cacheEngine = cacheEngine, ...)
                                if(doChildren)
-                                   .self$instanceChildren(branchInstructs)
+                                   .self$instanceChildren(branchInstructs, doChildren = FALSE)
                                .self
                            },
-                               instanceChildren = function(branchInstructs)
+                               instanceChildren = function(branchInstructs, doChildren = TRUE)
                            {
                                if(!is(element, "ContainerElement"))
                                    return()
                                kids = vector("list", length(element$children))
                                for(k in seq(kids))
                                {
-                                   kids[[k]] = makeInstance(element$children[[k]], branchInstructs)
+                                   kids[[k]] = makeInstance(element$children[[k]], branchInstructs, doKids = doChildren, cacheEngine = .self$cacheEngine)
                                }
                                children <<- kids
                            }
@@ -510,6 +510,7 @@ setRefClass("DocInstance",
                         env = envir
                     args = list(...)
                     if(missing(cacheEngine)) {
+                        browser()
                         if("parentDoc" %in% names(args))
                             cEngine = args$parentDoc$cacheEngine
                         else
@@ -538,7 +539,7 @@ replaceKids = function(value, self)
         value = lapply(value, function(x)
             {
                 if(is(x, "DocElement"))
-                    new("ElementInstance", element = x)
+                    new("ElementInstance", element = x, doChildren=FALSE, cacheEngine = self$cacheEngine)
                 else
                     x
             })

@@ -57,6 +57,12 @@ setMethod("dyndoc_attrs", "RCodeElement",
           as.list(ret)
       })
 
+setMethod("dyndoc_attrs", "WithVisValue",
+          function(obj) list(value = obj@value, visible = obj@visible))
+
+setMethod("dyndoc_attrs", "WithVisPlusGraphics",
+          function(obj) list(value = obj@value, visible = obj@visible, graphics = obj@graphics))
+          
 setMethod("dyndoc_attrs", "DocElement",
           function(obj)
       {

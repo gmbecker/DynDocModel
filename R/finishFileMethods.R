@@ -22,7 +22,7 @@ finishHTML = function(output, file, doc)
 
 finishTex = function(output, file, doc)
 {
-    cat(file = file, output)
+    cat(file = file, pandoc_convert(output, out_format="latex"))
     if(inherits(file, "connection"))
         close(file)
 }

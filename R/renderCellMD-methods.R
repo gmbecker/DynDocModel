@@ -1,6 +1,6 @@
 #raw and markdown text gets spit out as is
 setMethod("renderCellMD", "TextElement",
-          function(node, formatters, state, converters = list(), inline = FALSE, ...)
+          function(node, formatters, state, converters = list(), inline = FALSE, doOutupt= FALSE, ...)
       {
           convCont <- switch(class(node),
                              "MDTextElement" = node$content,
@@ -45,7 +45,7 @@ setMethod("renderCellMD", "InlineRCode",
 
 
 setMethod("renderCellMD", "MixedMDElement",
-          function(node, formatters, state, inline = FALSE, ...)
+          function(node, formatters, state, inline = FALSE, doOutput= TRUE, ...)
       {
           ret = paste(sapply(node$children, renderCellMD, formatters = formatters, inline = TRUE, state = state, ...), collapse = "")
           if(!inline)
@@ -54,9 +54,17 @@ setMethod("renderCellMD", "MixedMDElement",
       })
 
 
+setMethod("renderCellMD", "PyCodeElement",
+          function(node, formatters, state, doOutput = TRUE, ...)
+      {
+          if (node$content == "%load_ext rmagic" || node$content=="")
+              character()
+          else
+              stop("I don't know how to handle python code yet!")
+      })
 
 setMethod("renderCellMD", "ElementInstance",
-          function(node, formatters, state, inline = FALSE, ...)
+          function(node, formatters, state, inline = FALSE, doOutput = TRUE, ...)
       {
           formatters = combineFormatters(node$formatters, formatters)
           
@@ -78,12 +86,12 @@ setMethod("renderCellMD", "ElementInstance",
                   kbump = ""
               else
                   kbump = "\n\n"
-              kidout = paste(paste0(kbump, sapply(node$children, renderCellMD, formatters = formatters, inline = inline2, state = state, ...)), collapse = "\n")
+              kidout = paste(paste0(kbump, sapply(node$children, renderCellMD, formatters = formatters, inline = inline2, state = state, doOutput=FALSE, ...)), collapse = "\n")
               ret = c(ret, kidout)
           }
           else
           {
-              ret = c(ret, renderCellMD(node$element, formatters, inline = inline, state = state, ...))
+              ret = c(ret, renderCellMD(node$element, formatters, inline = inline, state = state, doOutput = FALSE, ...))
           }
 
           if(length(node$outputs))

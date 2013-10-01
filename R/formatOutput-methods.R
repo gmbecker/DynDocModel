@@ -26,7 +26,7 @@ setMethod("formatOutput", "ANY",
           function(object)
           {
               printed = capture.output(print(object))
-              new("FormattedOutput", value = printed , format = "text")
+              new("FormattedOutput", value = paste(printed, collapse="\n") , format = "text")
           })
 
 setMethod("formatOutput", "WithVisValue",
@@ -49,6 +49,8 @@ setMethod("formatOutput", "WithVisPlusGraphics",
           graphics = lapply(object@graphics, formatOutput)
           if(length(graphics))
               val = c(graphics, val)
+          if(!is(val, "list"))
+              val = list(val)
           as(val, "FormattedOutputList")
       })
 

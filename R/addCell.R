@@ -17,6 +17,7 @@ addCellHTML = function(outdoc, content)
         outdoc
     }
 
+addCellHTML = addCellMD
 #IPyNB is easy because it is just a list that will be JSONified during the finish call
 addCellIPyNB = function(outdoc, content)
     {
@@ -27,7 +28,9 @@ addCellIPyNB = function(outdoc, content)
         outdoc
     }
 
-addCellRdb = addCellRmd = addCellTex = function(outdoc, content) stop("not yet implemented")
+addCellTex = addCellMD
+
+addCellRdb = addCellRmd = function(outdoc, content) stop("not yet implemented")
 DefaultAddCells <- list(
     html = addCellHTML,
     md = addCellMD,

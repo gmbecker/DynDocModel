@@ -103,9 +103,18 @@ setMethod("evalDynDoc", "ContainerElement",
 #evaluating an element (NOT an instance) always evalDynDocs the code and returns the return value, because we never change the underlying element
 # only the instance
 setMethod("evalDynDoc", "RCodeElement",
-          function(obj, eval = evalWithCache, env = obj$envir, value = FALSE, ...)
+          function(obj, eval = evalWithCache, env = obj$envir, value = FALSE, force, ...)
           {
-              res = eval(obj$content, env = env, ...)
+              if(missing(force))
+              {
+                  if(!is.null(obj$attributes$dyndocmodel) && !is.null(obj$attributes$dyndocmodel$cache))
+                      force = !obj$attributes$dyndocmodel$cache
+                  else if (!is.null(obj$attributes$cache))
+                      force = !obj$attributes$cache
+                  else
+                      force = FALSE
+              }
+              res = eval(obj$content, env = env, force = force, ...)
               if(!is(res, "OutputList"))
                   res = as(list(res), "OutputList")
               if(value)

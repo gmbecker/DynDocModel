@@ -173,14 +173,26 @@ codeToCodeEl = function(code, parent, interactive = FALSE)
       }
         
                                         #formatSpecific = code[!grepl("(input|outputs|language)", names(code))]
-    
+
+    if (!is.null(formatSpecific$metadata) && !is.null(formatSpecific$metadata$dyndocmodel))
+    {
+        met = formatSpecific$metadata
+        attrs = met$dyndocmodel
+        if(!is.list(attrs))
+            attrs = as.list(attrs)
+        met = met[-which(names(met) == "dyndocmodel")]
+        formatSpecific$metadata = met
+    } else
+        attrs = list()
+
+        
     constructor = switch(language,
            python = pyCodeElement$new,
            R = rCodeElement$new,
            stop(paste("Unrecognised language:", language))
            )
     
-    constructor(content=content, parent = parent, formatSpecific=formatSpecific)
+    constructor(content=content, parent = parent, formatSpecific=formatSpecific, attributes = attrs)
   }
 
 outToOutputEl = function(outel, code, parent)

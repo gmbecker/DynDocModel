@@ -4,10 +4,10 @@ pandoc_convert = function(content, in_format = "markdown", out_format = "html", 
 {
 
     tmpInName = paste(tmpfile, getPDExt(in_format), sep=".")
-    writeTmpFile(content, filename)
-    
+    writeTmpFile(content, tmpfile)
+
     cmd = paste("pandoc", tmpfile, "-f", in_format, "-t", out_format, "-o", tmpout, paste(extra_args,collapse = " "))
-    tryCatch(system(cmd), error = function(e) e)
+    e = tryCatch(system(cmd), error = function(e) e)
     if(is(e, "error"))
         stop("call to pandoc failed. Please make sure pandoc is installed. Exact command was ", cmd)
 
@@ -48,7 +48,7 @@ setMethod("writeTmpFile", "XMLInteralDocument",
 setMethod("writeTmpFile", "character",
           function(obj, fname)
       {
-          writeLines(obj, file= fname)
+          writeLines(obj, con= fname)
       })
 
 readTmpFile = function(file, format)

@@ -22,13 +22,22 @@ finishHTML = function(output, file, doc)
 
 finishTex = function(output, file, doc)
 {
-    cat(file = file, pandoc_convert(output, out_format="latex"))
+    cat(file = file, pandoc_convert(output, out_format="latex", extra_args="--standalone --highlight-style pygments"))
     if(inherits(file, "connection"))
         close(file)
 }
 
+finishPDF = function(output, file, doc)
+{
+    
+    filstuff = gsub("\\.pdf", "", file)
+    texfile = paste0(filstuff, ".tex")
+    finishTex(output, texfile, doc)
+    tools::texi2pdf(texfile, clean=TRUE) 
 
-finishRmd = finishRdb =  finishPDF = function(output, file, doc) stop("Not implemented yet")
+}
+
+finishRmd = finishRdb =   function(output, file, doc) stop("Not implemented yet")
 
 
 DefaultFinishers <- list(

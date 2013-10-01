@@ -141,7 +141,9 @@ doImage = function(fobject, state, dataURI = FALSE)
         fname = file.path(imdir, paste0(state$basePlotName, state$plots, ".", fobject@info$format))
         state$plots = state$plots + 1
         writeBin(fobject@value, fname)
-        paste0("<img src='", fname, "' alt='R plot'/>")
+        paste0("![An R plot](", fname, ")\\")
+     #  paste0("<img src='", fname, "' alt='R plot'/>")
+        
     }
  
 }

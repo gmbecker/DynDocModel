@@ -1,7 +1,7 @@
 
 getShape = function(element)
   {
-    if(is(element, "BranchSetElement"))
+    if(is(element, "DecisionElement"))
       "triangle"
     else if (is(element, "ContainerElement"))
       "rectangle"
@@ -47,7 +47,7 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
           colors <<- c(colors, "white")
 
         #If the node has children, recursively draw its contents
-        if(is(element, "BranchSetElement"))
+        if(is(element, "DecisionElement"))
           {
             #same parent for all branch children (side-by-side), we get this via branchparent = TRUE
             inds = sapply(element$children, .processElement, branchparent = TRUE)
@@ -99,7 +99,7 @@ if(FALSE)
 processElement = function(element, branchparent = FALSE)
   {
     
-    if(is(element, "BranchSetElement"))
+    if(is(element, "DecisionElement"))
       {
         #same parent for all branch children (side-by-side), we get this via branchparent
         inds = sapply(element$children, processElement, branchparent = TRUE)

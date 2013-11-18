@@ -398,14 +398,14 @@ mixedLatexElement = setRefClass("MixedLatexElement", contains = "MixedTextElemen
 
 branchElement = setRefClass("BranchElement", contains = "ContainerElement")
 
-branchSetElement = setRefClass("BranchSetElement", contains = "ContainerElement")
+branchSetElement = setRefClass("DecisionElement", contains = "ContainerElement")
 altImplElement = setRefClass("AltImplElement", contains = "BranchElement")
-altImplSetElement = setRefClass("AltImplSetElement", contains = "BranchSetElement")
+altImplSetElement = setRefClass("AltImplSetElement", contains = "DecisionElement")
 
 altMethodElement = setRefClass("AltMethodElement", contains = "BranchElement")
-altMethodSetElement = setRefClass("AltMethodSetElement", contains = "BranchSetElement")
+altMethodSetElement = setRefClass("AltMethodSetElement", contains = "DecisionElement")
 altQuestElement = setRefClass("AltQuestElement", contains = "BranchElement")
-altQuestSetElement = setRefClass("AltQuestSetElement", contains = "BranchSetElement")
+altQuestSetElement = setRefClass("AltQuestSetElement", contains = "DecisionElement")
 
 sectElement = setRefClass("SectionElement", contains = "ContainerElement",
     fields = list(

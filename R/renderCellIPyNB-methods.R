@@ -114,7 +114,7 @@ setMethod("renderCellIPyNB", "TaskElement",
             listout
           })
 
-setMethod("renderCellIPyNB", "BranchSetElement",
+setMethod("renderCellIPyNB", "DecisionElement",
           function(node, formatters, ...)
           {
               if(!is.null(node$formatSpecific) && !is.null(null$formatSpecific$ipynb))
@@ -200,7 +200,7 @@ setMethod("renderCellIPyNB", "ElementInstance",
 
 
 setMethod("getIPyCellType", "TaskElement", function(el) "task")
-setMethod("getIPyCellType", "BranchSetElement", function(el) "altset")
+setMethod("getIPyCellType", "DecisionElement", function(el) "altset")
 setMethod("getIPyCellType", "BranchElement", function(el) "alt")
 setMethod("getIPyCellType", "TextElement", function(el) "raw")
 setMethod("getIPyCellType", "MDTextElement", function(el) "markdown")

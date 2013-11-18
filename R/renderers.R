@@ -27,7 +27,7 @@ writeRmd = function(doc, file, formatters, cellRenderers = getDefaultRenderer("r
 
 writeHTML = function(doc, file, formatters, cellRenderers = getDefaultRenderer("html"),  initOuput = makeHeaderHTML, finishOutput = makeFooterHTML, addCell = addCellHTML, ...)
     {
-        if(any(sapply(doc$children, function(x) is(x, "BranchSetElement"))))
+        if(any(sapply(doc$children, function(x) is(x, "DecisionElement"))))
             warning("rendering of branching documents is probably not properly implemented yet")
 
         foundRenderers = list()

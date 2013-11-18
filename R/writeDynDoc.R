@@ -36,7 +36,7 @@ writeDynDoc = function(doc,
     converters = list(),                    
     ...)
 {
-    if(any(sapply(doc$children, function(x) is(x, "BranchSetElement"))))
+    if(any(sapply(doc$children, function(x) is(x, "DecisionElement"))))
         warning("rendering of branching documents is probably not properly implemented yet")
 
     state = new.env()

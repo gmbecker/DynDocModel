@@ -99,7 +99,7 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE, doBranchSets = 
     
     ret = NULL
     
-    if(is(el, "BranchSetElement"))
+    if(is(el, "DecisionElement"))
     {
  
         for(target in branchInstr)
@@ -302,7 +302,7 @@ getFirstBranchings = function(el, found = NULL)
     fnd = list()
     for(kid in kids[possible])
     {
-        if(is_selfOrEl(kid, "BranchSetElement"))
+        if(is_selfOrEl(kid, "DecisionElement"))
             fnd = c(fnd, kid)
         else
             fnd = getFirstBranchings(kid, found = fnd)

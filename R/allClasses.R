@@ -58,7 +58,8 @@ dynDoc = setRefClass("DynDoc", fields = list(
                                    metadata = "ListOrNull",
                                    formatSpecific = "ListOrNull",
                                    .testbit = "ANY",
-                                   cacheEngine = "CachingEngine"),
+                                   cacheEngine = "CachingEngine",
+                                   formatters = "list"),
     methods = list(
         addChild = function(newel)
         {
@@ -109,7 +110,11 @@ docElement = setRefClass("DocElement",
         posInParent = "numeric",
         id = "character",
         .testbit = "logical",
-        cacheEngine = "CachingEngine"),
+        cacheEngine = "CachingEngine",
+        styleClasses = "ANY",
+        formatters = "list" #currently these will only affect code elements...
+    ),
+
     
     methods = list(
         initialize = function(obj, .testbit,cacheEngine, ...)
@@ -457,13 +462,20 @@ elementInstance <- setRefClass("ElementInstance",
                                posInParentInst = "numeric",
                                cacheEngine = "CachingEngine"),
                                methods = list(
-                               initialize = function(envir, doChildren = TRUE, branchInstructs = list(), element, cacheEngine = element$cacheEngine, ...)
+                               initialize = function(envir, doChildren = TRUE, branchInstructs = list(), cacheEngine, ...)
                            {
                                if(missing(envir))
                                    env = new.env()
                                else
                                    env = envir
-                               callSuper(envir = env, element = element, cacheEngine = cacheEngine, ...)
+                               if(missing(cacheEngine))
+                               {
+                                   if(!is.null(list(...)$element))
+                                       cacheEngine = list(...)$element$cacheEngine
+                                   else
+                                       cacheEngine = new("CachingEngine", base_dir = "./r_caches/", return_handler = wVGraphicsHandler, eval_fun = parseWithVis)
+                               }
+                               callSuper(envir = env,  cacheEngine = cacheEngine, ...)
                                if(doChildren)
                                    .self$instanceChildren(branchInstructs, doChildren = FALSE)
                                .self

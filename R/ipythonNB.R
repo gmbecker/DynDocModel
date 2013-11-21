@@ -30,29 +30,31 @@ processEl = function(el, parent= NULL)
   }
 
 mdElFromIPN = function(el, parent)
-  {
-    newel = mdElement$new(content=el$source, parent = parent, attributes = el$metadata)
+{
+    mdat = splitMetadata(el$metadata)
+    newel = mdElement$new(content=el$source, parent = parent, attributes = mdat$attrs, formatSpecific = list(metadata = mdat$formspec))
     parent$addChild(newel)
     newel
   }
 
 textElFromIPN = function(el, parent)
   {
-    newel = textElement$new(content=el$source, parent = parent, attributes = el$metadata)
+      mdat = splitMetadata(el$metadata)
+    newel = textElement$new(content=el$source, parent = parent, attributes = mdat$attrs, formatSpecific = list(metadata = mdat$formspec))
     parent$addChild(newel)
 #    parent
     newel
   }
 
 codeElFromIPN = function(el, parent)
-  {
+{
     newcode = codeToCodeEl(el, parent)
     if(!is.null(el$outputs))
     {  
-      newouts = lapply(el$outputs, outToOutputEl, code = newcode, parent = parent)
-      if(!is.list(newouts))
-        list(newouts)
-      newcode$outputs = as(newouts, "ElementList")
+        newouts = lapply(el$outputs, outToOutputEl, code = newcode, parent = parent)
+        if(!is.list(newouts))
+            list(newouts)
+        newcode$outputs = as(newouts, "ElementList")
     }
     parent$addChild(newcode) # do we also add newouts?
 #    parent
@@ -76,8 +78,9 @@ intcodeElFromIPN = function(el, parent)
 
 
 altsetElFromIPN = function(el, parent)
-  {
-    newel = branchSetElement$new(parent = parent)
+{
+    mdat = splitMetadata(el$metadata)
+    newel = branchSetElement$new(parent = parent, attributes = mdat$attrs, formatSpecific = list(metadata = mdat$formspec))
     newel$children = lapply(el$cells, processEl, parent = newel)
     parent$addChild(newel)
 #    parent
@@ -86,8 +89,9 @@ altsetElFromIPN = function(el, parent)
 
 
 altElFromIPN = function(el, parent)
-  {
-    newel = branchElement$new(parent = parent)
+{
+    mdat = splitMetadata(el$metadata)     
+    newel = branchElement$new(parent = parent, attributes = mdat$attrs, formatSpecific = list(metadata = mdat$formspec))
     newel$children = lapply(el$cells, processEl, parent = newel)
     parent$addChild(newel)
 #    parent
@@ -95,8 +99,9 @@ altElFromIPN = function(el, parent)
   }
 
 taskElFromIPN = function(el, parent)
-  {
-    newel = taskElement$new(parent = parent)
+{
+    mdat = splitMetadata(el$metadata)
+    newel = taskElement$new(parent = parent, attributes = mdat$attrs, formatSpecific = list(metadata = mdat$formspec))
     newel$children = lapply(el$cells, processEl, parent = newel)
     parent$addChild(newel)
 #    parent
@@ -109,7 +114,8 @@ intcodeToIntCodeEl = function(code, parent)
 
     content = code$input
     language = code$language
-    formatSpecific = code[!grepl("(input|outputs|widgets)", names(code))]
+    formatSpecific = code[!grepl("(input|outputs|widgets|metadata)", names(code))]
+   
     widgets =  as(lapply(code$widgets, IPyNBWidgetToWidget), "WidgetsList")
     if(language == "python" && length(grep("%%R", content)))
       {
@@ -133,6 +139,9 @@ intcodeToIntCodeEl = function(code, parent)
       }
         
                                         #formatSpecific = code[!grepl("(input|outputs|language)", names(code))]
+
+    mdat = splitMetadata(code$metadata)
+    formatSpecific$metadata = mdat$formspec
     
     constructor = switch(language,
            python = intPyCodeElement$new,
@@ -140,7 +149,7 @@ intcodeToIntCodeEl = function(code, parent)
            stop(paste("Unrecognised language:", language))
            )
     
-    constructor(content=content, parent = parent, formatSpecific=formatSpecific, widgets = widgets)
+    constructor(content=content, parent = parent, formatSpecific=formatSpecific, widgets = widgets, attributes = mdat$attrs)
   }
 
 codeToCodeEl = function(code, parent, interactive = FALSE)
@@ -150,7 +159,8 @@ codeToCodeEl = function(code, parent, interactive = FALSE)
         content = ""
     
     language = code$language
-    formatSpecific = code[!grepl("(input|outputs)", names(code))]
+    formatSpecific = code[!grepl("(input|outputs|metadata)", names(code))]
+
     if(language == "python" && length(grep("%%R", content)))
       {
         #TODO: need to deal with arguments passed to the rmagic eg push pull etc
@@ -174,17 +184,9 @@ codeToCodeEl = function(code, parent, interactive = FALSE)
         
                                         #formatSpecific = code[!grepl("(input|outputs|language)", names(code))]
 
-    if (!is.null(formatSpecific$metadata) && !is.null(formatSpecific$metadata$dyndocmodel))
-    {
-        met = formatSpecific$metadata
-        attrs = met$dyndocmodel
-        if(!is.list(attrs))
-            attrs = as.list(attrs)
-        met = met[-which(names(met) == "dyndocmodel")]
-        formatSpecific$metadata = met
-    } else
-        attrs = list()
+    mdat = splitMetadata(code$metadata)
 
+    formatSpecific$metadata = mdat$formspec
         
     constructor = switch(language,
            python = pyCodeElement$new,
@@ -192,18 +194,22 @@ codeToCodeEl = function(code, parent, interactive = FALSE)
            stop(paste("Unrecognised language:", language))
            )
     
-    constructor(content=content, parent = parent, formatSpecific=formatSpecific, attributes = attrs)
+    constructor(content=content, parent = parent, formatSpecific=formatSpecific, attributes = mdat$attrs)
   }
 
 outToOutputEl = function(outel, code, parent)
   {
     if(!is.list(outel))
-      outel = as.list(outel)
+        outel = as.list(outel)
     content = outel$text
     format = outel$output_type
     metadata = outel$metadata
     formatSpecific = outel[!grepl("(text|output_type|metadata)", names(outel))]
-    outputElement$new(codeElement = code, parent = parent, content = content, format = format, attributes = metadata, formatSpecific = formatSpecific)
+
+    mdat = splitMetadata(metadata)
+    attrs = mdat$attrs
+    formatSpecific$metadata = mdat$formspec
+    outputElement$new(codeElement = code, parent = parent, content = content, format = format, attributes = attrs, formatSpecific = formatSpecific)
   }
 
 
@@ -227,5 +233,19 @@ writeIPyNB = function(doc, file = NULL, ...)
       json
     
   }
+
+
+splitMetadata = function(meta)
+{
+    if(is.null(meta) || length(meta) == 0)
+        list(attrs = NULL, formspec = NULL)
+    attrs = meta$dyndocmodel
+    if(!is.list(attrs))
+            attrs = as.list(attrs)
+    formspec = meta[-which(names(meta) == "dyndocmodel")]
+    
+    list(attrs = attrs, formspec = formspec)
+}
+
 
 

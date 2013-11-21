@@ -12,4 +12,8 @@ dev.off()
 
 nested = readDynDoc(system.file("documents/NestedBranching.ipynb", package="DynDocModel"))
 
+
 makeDocumentGraph(nested)
+
+detlevs = readDynDoc("~/gabe/checkedout/ComplexDocuments/ipythonNotebooks/ClassifyingDigits_Demo.ipynb")
+makeDocumentGraph(detlevs)

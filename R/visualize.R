@@ -21,6 +21,8 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
     shapes = character()
     taskdepth = 0
     colors = character()
+    detail_levels = data.frame(lastcell = curcell, level = 1)
+    lastlev = 1
 
 #recursive function to calculate (non-directed) edges between nodes in the document graph.
 # if element is a branchset, returns the indexes of the nodes written at the bottom of each branch, otherwise returns the index of the last node written
@@ -36,6 +38,69 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
         shapes[curcell] <<- getShape(element)
         for(i in parentlist)
           graphlist[[i]]$edges <<- c(graphlist[[i]]$edges, curcell)
+
+        detlev = if(is.null(element$attributes) || is.null(element$attributes$detail)) 1 else  element$attributes$detail
+       # print(detlev)
+
+
+
+
+        if(detlev > 1)
+        {
+            print(detail_levels)
+         #   print(paste("detlev:", detlev, "lastlev:", lastlev, "curcell:", curcell))
+        }
+
+        if(lastlev >  detlev)
+        {
+            
+            print(paste("detlev:", detlev, "lastlev:", lastlev, "curcell:", curcell))
+            j = nrow(detail_levels)
+            while(j >=1 )
+            {
+                if(detail_levels[j, "level"] <= detlev)
+                {
+                    lowercell = detail_levels[j, "lastcell"]
+                    graphlist[[lowercell]]$edges <<- c(graphlist[[lowercell]]$edges, curcell)
+                }
+                if(detail_levels[j, "level"] == detlev)
+                {
+                    print("they be equal!")
+                    break()
+                }
+                j = j - 1
+            }
+        }
+        
+        if(detlev %in% detail_levels$level)
+            detail_levels[detail_levels$level == detlev, "lastcell"] <<- curcell
+        else
+            detail_levels <<- rbind(detail_levels, data.frame(level = detlev, lastcell = curcell))
+        lastlev <<- detlev
+        if(FALSE)
+        {
+        
+            if(detlev %in% detail_levels$level)
+                detail_levels[detail_levels$level == detlev, "lastcell"] <<- curcell
+            else if (detlev > max(detail_levels$level))
+                detail_levels <<- rbind(detail_levels, data.frame(level = detlev, lastcell = curcell))
+            else {
+                j = 1
+                while(j <= nrow(detail_levels))
+                {
+                    if(detail_levels[j, "level"] < detlev)
+                    {
+                        lowercell = detail_levels[j, "lastcell"]
+                        graphlist[[lowercell]]$edges <<- c(graphlist[[lowercell]]$edges, curcell)
+                    }
+                    j = j + 1
+            }
+                detail_levels <<- rbind(detail_levels, data.frame(level = detlev, lastcell = curcell))
+            }
+        }
+        detail_levels <<- subset(detail_levels, level <= detlev)
+        
+        
         tmp = parentlist
         parentlist <<- curcell
         curcell <<- curcell + 1
@@ -70,6 +135,7 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
               taskdepth <<- taskdepth - 1
             ret
           }
+            
         ret
       }
     

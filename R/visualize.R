@@ -113,8 +113,8 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
             
             if(branchparent)
                 parentlist <<- tmp
-           # else
-           #     parentlist <<- curcell
+            else
+                parentlist <<- curcell
             
             if(is(element, "TaskElement"))
               taskdepth <<- taskdepth - 1

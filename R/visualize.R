@@ -40,21 +40,11 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
           graphlist[[i]]$edges <<- c(graphlist[[i]]$edges, curcell)
 
         detlev = if(is.null(element$attributes) || is.null(element$attributes$detail)) 1 else  element$attributes$detail
-       # print(detlev)
-
-
-
-
-        if(detlev > 1)
-        {
-            print(detail_levels)
-         #   print(paste("detlev:", detlev, "lastlev:", lastlev, "curcell:", curcell))
-        }
+      
 
         if(lastlev >  detlev)
         {
             
-            print(paste("detlev:", detlev, "lastlev:", lastlev, "curcell:", curcell))
             j = nrow(detail_levels)
             while(j >=1 )
             {
@@ -65,7 +55,6 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
                 }
                 if(detail_levels[j, "level"] == detlev)
                 {
-                    print("they be equal!")
                     break()
                 }
                 j = j - 1
@@ -77,27 +66,6 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
         else
             detail_levels <<- rbind(detail_levels, data.frame(level = detlev, lastcell = curcell))
         lastlev <<- detlev
-        if(FALSE)
-        {
-        
-            if(detlev %in% detail_levels$level)
-                detail_levels[detail_levels$level == detlev, "lastcell"] <<- curcell
-            else if (detlev > max(detail_levels$level))
-                detail_levels <<- rbind(detail_levels, data.frame(level = detlev, lastcell = curcell))
-            else {
-                j = 1
-                while(j <= nrow(detail_levels))
-                {
-                    if(detail_levels[j, "level"] < detlev)
-                    {
-                        lowercell = detail_levels[j, "lastcell"]
-                        graphlist[[lowercell]]$edges <<- c(graphlist[[lowercell]]$edges, curcell)
-                    }
-                    j = j + 1
-            }
-                detail_levels <<- rbind(detail_levels, data.frame(level = detlev, lastcell = curcell))
-            }
-        }
         detail_levels <<- subset(detail_levels, level <= detlev)
         
         
@@ -116,6 +84,7 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
           {
             #same parent for all branch children (side-by-side), we get this via branchparent = TRUE
             inds = sapply(element$children, .processElement, branchparent = TRUE)
+            inds = inds[inds>0]
             #the next node needs to connect to all the nodes at the end of the branches
             parentlist <<- inds
             ret = inds
@@ -123,19 +92,40 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
         else if (is(element, "ContainerElement"))
           {
                                         #new parent for each child (sequential)
+         #     browser()
          #   tmp = parentlist
             for(el in element$children)
               {
                 ret = .processElement(el)#, branchparent = FALSE)
               }
-            if(branchparent)
-              parentlist <<- tmp
+            
+            #end container grouping
+        #    curcell <<- curcell + 1
+            graphlist[[curcell]] <<- list(edges = numeric())
+            shapes[curcell] <<- getShape(element)
+            graphlist[[ret]]$edges <<- c(graphlist[[ret]]$edges, curcell)
 
+            if(taskdepth)
+                colors <<- c(colors, taskpalette[taskdepth])
+            else
+                colors <<- c(colors, "white")
+            
+            
+            if(branchparent)
+                parentlist <<- tmp
+           # else
+           #     parentlist <<- curcell
+            
             if(is(element, "TaskElement"))
               taskdepth <<- taskdepth - 1
-            ret
-          }
-            
+            if (is(element, "BranchElement") && is_termBranch(element))
+                ret = -1
+            else
+                ret = curcell
+            curcell <<- curcell + 1
+                
+        }
+        
         ret
       }
     

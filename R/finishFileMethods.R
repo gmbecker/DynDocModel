@@ -37,6 +37,18 @@ finishPDF = function(output, file, doc)
 
 }
 
+finishRdb = function(output, file, doc)
+{
+    #fix placement of code ndoes
+    nodestomove = xpathSApply(output, "//x:code[@in.last.para=='TRUE']", namespaces = c(r="http://www.r-project.org"))
+    for(nd in nodestomove)
+    {
+        addChildren(getSibling(nd, after = FALSE), nd)
+    }
+
+    saveXML(output, file = file)
+}
+
 finishRmd = finishRdb =   function(output, file, doc) stop("Not implemented yet")
 
 

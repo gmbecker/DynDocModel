@@ -27,4 +27,5 @@ renderCellTex = renderCellMD
 setMethod("renderCellMD", c(node = "ANY"), function(node, formatters, ...) stop(sprintf("unsupported element class %s", class(node))))
 
 setGeneric("getIPyCellType", function(el) standardGeneric("getIPyCellType"))
+setGeneric("getRdbTag", function(el) standardGeneric("getRdbTag"))
 

@@ -101,7 +101,7 @@ processRdbCode = function(node, parent, xsl, in.last.para = FALSE, state)
 {
     code = xmlValue(node)
     
-    codel = rCodeElement$new(content = code, formatSpecific = list(in.last.para = in.last.para))
+    codel = rCodeElement$new(content = code, formatSpecific = list(rdb = list(in.last.para = in.last.para)))
     
     parent$addChild(codel)
 }

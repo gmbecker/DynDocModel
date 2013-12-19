@@ -105,15 +105,14 @@ setMethod("evalDynDoc", "ContainerElement",
 setMethod("evalDynDoc", "RCodeElement",
           function(obj, eval = evalWithCache, env = obj$envir, value = FALSE, force, ...)
           {
-              if(missing(force))
-              {
-                  if(!is.null(obj$attributes$dyndocmodel) && !is.null(obj$attributes$dyndocmodel$cache))
-                      force = !obj$attributes$dyndocmodel$cache
-                  else if (!is.null(obj$attributes$cache))
-                      force = !obj$attributes$cache
-                  else
-                      force = FALSE
-              }
+           
+              if(!is.null(obj$attributes$dyndocmodel) && !is.null(obj$attributes$dyndocmodel$cache))
+                  force = !obj$attributes$dyndocmodel$cache
+              else if (!is.null(obj$attributes$cache))
+                  force = !obj$attributes$cache
+              else if(missing(force))
+                  force = FALSE
+              
               res = eval(obj$content, env = env, force = force, ...)
               if(!is(res, "OutputList"))
                   res = as(list(res), "OutputList")

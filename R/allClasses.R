@@ -309,6 +309,8 @@ rCodeElement = setRefClass("RCodeElement", contains = "CodeElement",
                 .content
             else
                 {
+                    if(!is.character(value))
+                        value = deparse(value, control="all")
                     .content <<- value
                     valhash = digest(unparse(parse(text=value, keep.source=FALSE)))
                     

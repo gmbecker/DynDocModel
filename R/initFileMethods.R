@@ -32,8 +32,21 @@ initMD = initRmd = initHTML = initTex = function(fname, doc, ...)
     character()
 }
 
+initRdb = function(fname, doc, tag = "article", nspaces = c(r="http://www.r-project.org",
+                               js="http://www.ecma-international.org/publications/standards/Ecma-262.htm",
+                               xml="http://www.w3.org/XML/1998/namespace",
+                               omg="http://www.omegahat.org",
+                               bioc="http://www.bioconductor.org",
+                               rfrg="http://r-forge.r-project.org",
+                               xl="http://www.w3.org/Xlink",
+                               xi="http://www.w3.org/2001/XInclude",
+                               py="http://www.python.org")
+)
+{
+    newXMLDoc( node = newXMLNode(tag, namespaceDefinitions=nspaces))
+}
 
-initRdb =  function(fname, doc) stop("Not implemented yet")
+
 
 DefaultInit <- list(
     rmd = initRmd,

@@ -239,10 +239,16 @@ splitMetadata = function(meta)
 {
     if(is.null(meta) || length(meta) == 0)
         list(attrs = NULL, formspec = NULL)
-    attrs = meta$dyndocmodel
+    attrs = list()
+    if(!is.list(meta))
+        meta = as.list(meta)
+ #   if(!is.null(meta[["id"]]))
+  #      attrs$id = meta[["id"]]
+  #  if(!is.null(
+    attrs = c(id=meta[["id"]], meta[["dyndocmodel"]])
     if(!is.list(attrs))
             attrs = as.list(attrs)
-    formspec = meta[-which(names(meta) == "dyndocmodel")]
+    formspec = meta[-which(names(meta) %in% c("id", "dyndocmodel"))]
     
     list(attrs = attrs, formspec = formspec)
 }

@@ -30,7 +30,18 @@ addCellIPyNB = function(outdoc, content)
 
 addCellTex = addCellMD
 
-addCellRdb = addCellRmd = function(outdoc, content) stop("not yet implemented")
+addCellRdb = function(outdoc, content)
+{
+    if(!is.list(content))
+        content = list(content)
+    addChildren(outdoc, kids = content)
+}
+
+
+addCellRmd = function(outdoc, content) stop("not yet implemented")
+
+
+
 DefaultAddCells <- list(
     html = addCellHTML,
     md = addCellMD,

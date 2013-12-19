@@ -5,7 +5,7 @@ getThread <- function(doc,
                       start = 1,
                       end = length(doc$elements),
                       branches = NULL,
-                      branch_path = "/*/alt[1]",
+                      branch_path = NULL, #"/*/alt[1]",
                       use_abbrev = TRUE,
                       check_valid = TRUE,
                       cache = doc$cacheEngine,
@@ -101,21 +101,31 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE, doBranchSets = 
     
     if(is(el, "DecisionElement"))
     {
- 
-        for(target in branchInstr)
+
+        if(is(branchInstr, "BranchElement"))
+            branchInstr = list(branchInstr)
+        for(i in seq(along = branchInstr))
         {
+            target = branchInstr[[i]]
             found = sapply(el$children, sameElement, el2 = target)
             if(any(found))
-                return(makeInstance(target, doKids = TRUE, ..., branchInstr = branchInstr[!found], cacheEngine = cacheEngine))
+                return(makeInstance(target, doKids = TRUE, ..., branchInstr = branchInstr[-i], cacheEngine = cacheEngine))
         }
-        warning("No branch selection instructions for this set of branches. Selecting first branch.")
-        ret = makeInstance(el[[1]], doKids = TRUE, branchInstr= branchInstr, cacheEngine = cacheEngine, ...)
+        warning("No branch selection instructions for this set of branches. Selecting first non-terminal branch.")
+        nonterms = which(sapply(el$children, function(x) !is_termBranch(x) ) )
+        if(!length(nonterms))
+        {
+            warning("No non-terminal branches found to select as default branch, using first branch.")
+            nonterms=1
+        }
+        ret = makeInstance(el[[ nonterms[1] ]], doKids = TRUE, branchInstr= branchInstr, cacheEngine = cacheEngine, ...)
         
-    }else if(is(el, "MixedTextElement") || (is(el, "ContainerElement") && doKids)) {
+#This used to differentiate between things that should get passed doChildren=TRUE and doChildren=FALSE, but nested tasks weren't resolving properly...
+ #   }else if(is(el, "MixedTextElement") || (is(el, "ContainerElement") && doKids)) {
         
-        ret = new("ElementInstance", element = el, doChildren = TRUE, branchInstructs = branchInstr, cacheEngine = cacheEngine, ...)
+  #      ret = new("ElementInstance", element = el, doChildren = TRUE, branchInstructs = branchInstr, cacheEngine = cacheEngine, ...)
     } else {
-        ret = new("ElementInstance", element = el, doChildren = FALSE, cacheEngine = cacheEngine, ...)
+        ret = new("ElementInstance", element = el, doChildren = TRUE, cacheEngine = cacheEngine, branchInstr = branchInstr, ...)
     }
     
     ret
@@ -201,13 +211,6 @@ checkNodeAttrs = function(node, attrs)
 #this implementation will probably be really slow
 getAllThreads = function(doc, start = 1 , end = length(doc$elements) , only_valid=TRUE)
 {
-#    allbsets = dyndoc_rpath(doc, "//altset",  names_fun = dyndoc_rpath_abbrevs2)
- #   if(!length(allbsets))
-  #      return(list(getThread(doc)))
-    
-   # rootInds = which(sapply(allbsets, firstBranchingSince))
-    #rootBSets = allbsets[rootInds]
-    #remaining = allbsets[-rootInds]
     
     branchInstr = expandBranches(doc)
     if(!length(branchInstr))
@@ -223,14 +226,7 @@ expandBranches = function(parent, prev = list())
 {
     
     altsets = getFirstBranchings(parent)
-    #if there aren't any more branchings
-   # if(!length(altsets))
-    #    return(list())
-    
-  #  if(length(prev))
          ret = list(prev)
-   # else
-    #    ret = list()
 
     for(pt in altsets)
     {
@@ -238,9 +234,6 @@ expandBranches = function(parent, prev = list())
         for(br in pt$children)
             onestep = c(onestep,  expandBranches(br, prev = list(br)))
         ret = allCombos(ret, onestep)
-     #   tmp =lapply(pt$children, function(br) expandBranches(br, list(br)))
-        
-      #  ret = addToAll(ret, tmp, both = TRUE)
     }
     ret
 }
@@ -253,33 +246,7 @@ allCombos = function(lst, add, rev = FALSE)
 }
 
 
-if(FALSE)
-{
 
-setGeneric("getFirstBranchings", function(el, found = NULL) standardGeneric("getFirstBranchings"))
-
-setMethod("getFirstBranchings", "ContainerElement",
-          function(el, found) {
-              .getFirstBranchings(el$children, found)
-          })
-
-
-setMethod("getFirstBranchings", "DynDoc",
-          function(el, found) {
-              .getFirstBranchings(el$elements, found)
-          })
-
-setMethod("getFirstBranchings", "DocElement",
-          function(el, found) {
-              list()
-          })
-
-setMethod("getFirstBranchings", "ElementInstance",
-          function(el) {
-              .getFirstBranchings(el$children, found)
-          })
-          
-}
 getFirstBranchings = function(el, found = NULL)
 {
     kids = list()
@@ -296,18 +263,19 @@ getFirstBranchings = function(el, found = NULL)
     possible = sapply(kids, function(x) is_selfOrEl(x, "ContainerElement"))
     
     if(!any(possible))
-        return(list())
+        return(found)
 
     ret = list()
     fnd = list()
     for(kid in kids[possible])
     {
         if(is_selfOrEl(kid, "DecisionElement"))
-            fnd = c(fnd, kid)
+            found = c(found, kid)
         else
-            fnd = getFirstBranchings(kid, found = fnd)
+            found = getFirstBranchings(kid, found = found)
     }
-    unlist(c(found, fnd))
+                                        #    unlist(c(found, fnd))
+    unlist(found)
 }
 
 

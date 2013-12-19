@@ -103,7 +103,8 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
         #    curcell <<- curcell + 1
             graphlist[[curcell]] <<- list(edges = numeric())
             shapes[curcell] <<- getShape(element)
-            graphlist[[ret]]$edges <<- c(graphlist[[ret]]$edges, curcell)
+            for(r in ret)
+                graphlist[[r]]$edges <<- c(graphlist[[r]]$edges, curcell)
 
             if(taskdepth)
                 colors <<- c(colors, taskpalette[taskdepth])

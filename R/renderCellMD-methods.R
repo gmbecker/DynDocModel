@@ -19,6 +19,10 @@ setMethod("renderCellMD", "TextElement",
           ret
       })
 
+setMethod("renderCellMD", "ContainerElement",
+          function(node, formatters, state, converters = list(), inline = FALSE,  ...)
+          sapply(node$children, renderCellMD, formatters = formatters, state = state, converters = converters, inline = FALSE, ...)
+      )
 
 setMethod("renderCellMD", "RCodeElement",
           function(node, formatters, state, doOutput = FALSE, ...)
@@ -60,7 +64,8 @@ setMethod("renderCellMD", "PyCodeElement",
           if (node$content == "%load_ext rmagic" || node$content=="")
               character()
           else
-              stop("I don't know how to handle python code yet!")
+              node$content
+
       })
 
 setMethod("renderCellMD", "ElementInstance",
@@ -86,23 +91,26 @@ setMethod("renderCellMD", "ElementInstance",
                   kbump = ""
               else
                   kbump = "\n\n"
+
+              #doOutput was FALSE, but I think this is causing problems with nested containers.
               kidout = paste(paste0(kbump, sapply(node$children, renderCellMD, formatters = formatters, inline = inline2, state = state, doOutput=FALSE, ...)), collapse = "\n")
               ret = c(ret, kidout)
           }
           else
           {
               ret = c(ret, renderCellMD(node$element, formatters, inline = inline, state = state, doOutput = FALSE, ...))
-          }
+   #       }
 
-          if(length(node$outputs))
-          {
-              if(inline)
-                  bumper = "`"
-              else
-                  bumper = "\n```\n"
-              #fout = paste0(bumper, paste(sapply(node$outputs, function(x) formatObject(x, formatters = formatters)@value), collapse = "\n"), bumper)
-              fout = unlist(sapply(node$outputs, function(x) mdHandleFormatted(formatObject(x, formatters = formatters), inline = inline, state = state)))
-              ret = c(ret, fout)
+              if(length(node$outputs))
+              {
+                  if(inline)
+                      bumper = "`"
+                  else
+                      bumper = "\n```\n"
+                                        #fout = paste0(bumper, paste(sapply(node$outputs, function(x) formatObject(x, formatters = formatters)@value), collapse = "\n"), bumper)
+                  fout = unlist(sapply(node$outputs, function(x) mdHandleFormatted(formatObject(x, formatters = formatters), inline = inline, state = state)))
+                  ret = c(ret, fout)
+              }
           }
           ret = unlist(ret, recursive = TRUE)
           ret = paste0(lead, ret)

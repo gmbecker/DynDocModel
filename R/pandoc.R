@@ -20,6 +20,7 @@ getPDExt = function(format)
            markdown = "md",
            docbook = "db",
            latex = "tex",
+           raw = "txt",
            format)
 }
 
@@ -60,12 +61,28 @@ readTmpFile = function(file, format)
            )
 }
 
-convertContent = function(content, in_format, out_format, converters = list())
+
+rawToDB = function(txt)
+{
+    blank = grepl("^$", txt)
+    
+    pars = split(txt, cumsum(blank))
+    pars = pars[sapply(pars, function(x) length(x) > 0)]
+    tmpdoc = newXMLDoc(node = newXMLNode("tmproot"))
+    lapply(pars, function(x) newXMLNode("para", x, parent = xmlRoot(tmpdoc)))
+    
+}
+
+converters = list(default = pandoc_convert, raw = list(docbook = rawToDB))
+
+convertContent = function(content, in_format, out_format, converters = converters)
 {
     if(!is.null(converters[[in_format]]) && !is.null(converters[[in_format]][[out_format]]))
         cfun = converters[[in_format]][[out_format]]
+    else if (!is.null(converters[[in_format]]) && !is.null(converters[["default"]]))
+        cfun = converters[["default"]]
     else
         cfun = pandoc_convert
-
+    
     cfun(content, in_format = in_format, out_format = out_format)
 }

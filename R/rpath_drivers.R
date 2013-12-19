@@ -12,7 +12,7 @@ dyndoc_rpath_classes = function(obj)
     
     
     if(is(obj, "DynDoc"))
-        kids = obj$elements
+        kids = obj$children
     else if(any(sapply( c( "DocInstance", "DocThread", "ContainerElement", "ElementInstance"), function(cl) is(obj, cl))))
         kids = obj$children
     else if(is(obj, "ThreadList"))

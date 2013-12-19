@@ -1,7 +1,7 @@
 setMethod("show", "DynDoc",
           function(object)
           {
-            cat(paste0("\nAn object of class 'DynDoc'\n\nA Dynamic Document containing\n\t", length(object$elements), " elements\n"))
+            cat(paste0("\nAn object of class 'DynDoc'\n\nA Dynamic Document containing\n\t", length(object$children), " elements\n"))
           })
 
 setMethod("show", "DocElement",

@@ -55,10 +55,23 @@ setMethod("writeTmpFile", "character",
 readTmpFile = function(file, format)
 {
     switch(format,
-           docbook = getNodeSet("/*", parseXML(file)),
-           html = getNodeSet("/*", parseHTML(file)),
+           docbook = readTmpDB(file),
+           html = readTmpHTML(file),
            paste(readLines(file), collapse = "\n")
            )
+}
+
+readTmpDB = function(file)
+{
+    content = paste0("<tmproot>",paste(readLines(file), collapse = "\n"),"</tmproot>")
+    getNodeSet(xmlParse(content), "/tmproot/*")
+
+}
+
+readTmpHTML = function(file)
+{
+    content = paste(readLines(file), collapse = "\n")
+    gsub(".*<body>(.*)</body>.*", "\\1", ignore.case = TRUE)
 }
 
 

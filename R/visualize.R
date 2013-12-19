@@ -133,7 +133,7 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
 
 
     
-    for(el in doc$elements)
+    for(el in doc$children)
       .processElement(el)
     nms = as.character(seq(along=graphlist))
     names(graphlist) = nms

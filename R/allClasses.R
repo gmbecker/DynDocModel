@@ -35,11 +35,11 @@ dynDoc = setRefClass("DynDoc", fields = list(
                                        else
                                            .envir <<- value
                                    },
-                                   .elements = "ElementList",
-                                   elements = function(value)
+                                   .children = "ElementList",
+                                   children = function(value)
                                    {
                                        if(missing(value))
-                                           .elements
+                                           .children
                                        else
                                            {
                                                if(is(value, "DocElement"))
@@ -51,7 +51,7 @@ dynDoc = setRefClass("DynDoc", fields = list(
                                                        el$posInParent = i
                                                        el
                                                    }), "ElementList")
-                                               .elements <<- value
+                                               .children <<- value
                                                
                                            }
                                    },
@@ -63,10 +63,10 @@ dynDoc = setRefClass("DynDoc", fields = list(
     methods = list(
         addChild = function(newel)
         {
-            newpos = length(elements)+1
+            newpos = length(children)+1
             newel$posInParent = newpos
             newel$parent = .self
-            elements[[newpos]] <<- newel
+            children[[newpos]] <<- newel
             newel
         },
         insertChildren = function(elList, startPos)
@@ -76,18 +76,18 @@ dynDoc = setRefClass("DynDoc", fields = list(
             
             if(!is(elList, "ElementList"))
                 stop("elList does not seem to be an ElementList. Unable to insert children")
-            if(startPos > length(elements))
+            if(startPos > length(children))
                 return(sapply(elList, function(el) .self$addChild(el)))
-            afterinds = seq(startPos, length(elements))
-            elsafter = elements[afterinds]
-            elsbefore = elements[-afterinds]
-            .self$elements = as(c(elsbefore, elList, elsafter), "ElementList")
+            afterinds = seq(startPos, length(children))
+            elsafter = children[afterinds]
+            elsbefore = children[-afterinds]
+            .self$children = as(c(elsbefore, elList, elsafter), "ElementList")
                                         #parent/child stuff taken care off in field assignment
             
         },
         removeChild = function(oldel)
         {
-            elements <<- elements[-oldel$posInParent]
+            children <<- children[-oldel$posInParent]
             oldel$parent = NULL
             oldel$posInParent = 0
         },

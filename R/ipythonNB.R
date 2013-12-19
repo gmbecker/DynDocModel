@@ -224,7 +224,7 @@ writeIPyNB = function(doc, file = NULL, ...)
     listout$metadata = doc$metadata
 
     #TODO not handling metadata on worksheets right now.
-    listout$worksheets = list(list(cells = lapply(doc$elements, renderCellIPyNB)))
+    listout$worksheets = list(list(cells = lapply(doc$children, renderCellIPyNB)))
 
     json = toJSON(listout)
     if(!is.null(file))

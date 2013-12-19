@@ -24,7 +24,7 @@ readRmd = function(file, ...)
       #missing category for the last pt
       chnum = c(chnum, max(chnum))
       res = tapply(filetext, chnum, handleRmdChunk, simplify=FALSE)
-      doc = new("DynDoc", elements = res)
+      doc = new("DynDoc", children = res)
 #      doc$insertChildren(res, 1)
       doc
     }

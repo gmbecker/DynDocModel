@@ -132,7 +132,7 @@ setMethod("evalDynDoc", "PyCodeElement",
 setMethod("evalDynDoc", "DynDoc",
           function(obj, eval = evalWithCache, env = obj$envir, value = FALSE, ... )
           {
-              if(any(sapply(obj$elements, function(o) is(o, "BranchElement"))))
+              if(any(sapply(obj$children, function(o) is(o, "BranchElement"))))
                   warning("The document contains branches, which are not yet fully supported")
 
               thread = getThread(obj, ...)

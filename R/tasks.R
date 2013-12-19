@@ -10,7 +10,7 @@ makeTask = function(ellist)
 
     inds = sort(sapply(ellist, function(el) el$posInParent))
     if(class(parent)=="DynDoc")
-      parent$elements = parent$elements[-inds]
+      parent$children = parent$children[-inds]
     else
       parent$children = parent$children[-inds]
 

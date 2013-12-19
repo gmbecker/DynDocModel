@@ -1,14 +1,14 @@
 setMethod("[", "DynDoc",
           function(x, i, j, ...)
           {
-            els = x$elements[i, ...]
+            els = x$children[i, ...]
             as(els, "ElementList")
           })
 
 setMethod("[[<-", "DynDoc",
           function(x, i, ..., value)
           {
-            x$elements[[i,...]] = value
+            x$children[[i,...]] = value
             value$posInParent = i
             value$parent = x
             x
@@ -18,7 +18,7 @@ setMethod("[[<-", "DynDoc",
 setMethod("[[", "DynDoc",
           function(x, i, ...)
           {
-            x$elements[[i,...]]
+            x$children[[i,...]]
           })
 
 setMethod("[", "ContainerElement",
@@ -69,7 +69,7 @@ setMethod("[[", "DocInstance",
 setMethod("[[<-", "ContainerElement",
           function(x, i, ..., value)
           {
-            x$elements[[i,...]] = value
+            x$children[[i,...]] = value
             value$posInParent = i
             value$parent = x
             x

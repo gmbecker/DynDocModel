@@ -29,8 +29,8 @@ makeOneAltImpl = function(ellist)
     inds = sort(sapply(ellist, function(el) el$posInParent))
     if(is(parent,"DynDoc"))
       {
-        parent$elements = parent$elements[-inds]
-        sapply(seq(along=parent$elements), function(i) parent$elements[[i]]$posInParent = i)
+        parent$children = parent$children[-inds]
+        sapply(seq(along=parent$children), function(i) parent$children[[i]]$posInParent = i)
       }
     else if(is(parent, "ContainerElement"))
       {

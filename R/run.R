@@ -71,7 +71,7 @@ runDynDoc = function(doc,
 {
     
     rootenv = new.env()
-    sapply(doc$elements, runElement, evaluators = evaluators, formatters = formatters, parent.env = rootenv)
+    sapply(doc$children, runElement, evaluators = evaluators, formatters = formatters, parent.env = rootenv)
     if(!is.null(out))
         invisible(writeDynDoc(doc, file = out, output.format = output.format, cell.renderers = renderer))
 }

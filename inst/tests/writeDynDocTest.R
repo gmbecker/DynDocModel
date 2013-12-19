@@ -1,6 +1,11 @@
 library(DynDocModel)
 options(error=recover)
 
+
+
+doc3 = readDynDoc("~/gabe/checkedout/ComplexDocuments/ipythonNotebooks/FullHousingEDA.ipynb")
+writeDynDoc(doc = doc3, file = "RdbOutTest.Rdb")
+
 doc =  readRmd(system.file("documents", "minimal.Rmd", package="DynDocModel"))
 
 thr = evalDynDoc(doc)

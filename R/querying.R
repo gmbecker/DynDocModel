@@ -3,7 +3,7 @@
 
 getThread <- function(doc,
                       start = 1,
-                      end = length(doc$elements),
+                      end = length(doc$children),
                       branches = NULL,
                       branch_path = NULL, #"/*/alt[1]",
                       use_abbrev = TRUE,
@@ -77,7 +77,7 @@ getSiblings = function(el, posType = c("all", "before", "after"))
     if(is(el$parent, "ContainerElement"))
         sibs = el$parent$children
     else
-        sibs = el$parent$elements
+        sibs = el$parent$children
     
     posType = match.arg(posType, c("all", "before", "after"))
     inds  = switch(posType,
@@ -148,7 +148,7 @@ subquery = function(start, type=character(), attrs=list(), position=integer(), f
     if(is(start, "DynDoc"))
     {
         if(!parent)
-            els = start$elements
+            els = start$children
         else
             return(as(list(), "ElementList")) #there are no parents
     }
@@ -209,7 +209,7 @@ checkNodeAttrs = function(node, attrs)
 
 
 #this implementation will probably be really slow
-getAllThreads = function(doc, start = 1 , end = length(doc$elements) , only_valid=TRUE)
+getAllThreads = function(doc, start = 1 , end = length(doc$children) , only_valid=TRUE)
 {
     
     branchInstr = expandBranches(doc)
@@ -251,7 +251,7 @@ getFirstBranchings = function(el, found = NULL)
 {
     kids = list()
     if(is(el, "DynDoc"))
-        kids = el$elements
+        kids = el$children
     else if (is(el, "ContainerElement") || is(el, "ElementInstance"))
         kids = el$children
     

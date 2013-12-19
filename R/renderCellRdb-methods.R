@@ -8,91 +8,29 @@ setMethod("renderCellRdb", "TextElement",
                              "LatexTextElement" = convertContent(node$content, "latex", "docbook", converters),
                              stop("unrecognized text element type: ", class(node))
                              )
-          
-          parseXML(convCont)
+          if(is.character(convCont))
+              convCont = xmlParse(convCont)
+          convCont
       })
 
 setMethod("renderCellRdb", "ContainerElement",
           function(node, formatters, state, converters = list(), inline = FALSE,  ...)
       {
-          node = newXMLNode(getRdbTag(node), attrs = c(node$attributes, node$formatSpecific$rdb))
-          addChildren(node, kids = lapply(node$children, renderCellRdb, formatters = formatters, state = state, converters = converters, inline = FALSE, ...))
-          node
+          nd = newXMLNode(getRdbTag(node), attrs = c(node$attributes, node$formatSpecific$rdb))
+          kids = lapply(node$children, renderCellRdb, formatters = formatters, state = state, converters = converters, inline = FALSE, ...)
+          addChildren(nd, kids = kids)
+          nd
        })
 
 setMethod("renderCellRdb", "MixedTextElement",
           function(node, formatters, state, converters = list(), inline = FALSE,  ...)
       {
-                node = newXMLNode(getRdbTag(node), attrs = c(node$attributes, node$formatSpecific$rdb))
-          addChildren(node, kids = lapply(node$children, renderCellRdb, formatters = formatters, state = state, converters = converters, inline = TRUE, ...))
-          node
+                nd = newXMLNode(getRdbTag(node), attrs = c(node$attributes, node$formatSpecific$rdb))
+          addChildren(nd, kids = lapply(node$children, renderCellRdb, formatters = formatters, state = state, converters = converters, inline = TRUE, ...))
+          nd
 
 
       })
-
-
-if(FALSE)
-{
-
-setMethod("renderCellRdb", "TaskElement",
-          function(node, formatters, state, converters = list(), inline = FALSE,  ...)
-      {
-          task = newXMLNode("task", attrs = c(node$attributes, node$formatSpecific$rdb))
-          addChildren(task, kids = lapply(node$children, renderCellRdb, formatters = formatters, state = state, converters = converters, inline = FALSE, ...))
-          task
-      })
-
-
-setMethod("renderCellRdb", "DecisionElement",
-          function(node, formatters, state, converters = list(), inline = FALSE,  ...)
-      {
-          task = newXMLNode("decision", attrs = c(node$attributes, node$formatSpecific$rdb))
-          addChildren(task, kids = lapply(node$children, renderCellRdb, formatters = formatters, state = state, converters = converters, inline = FALSE, ...))
-          task
-      })
-
-setMethod("renderCellRdb", "BranchElement",
-          function(node, formatters, state, converters = list(), inline = FALSE,  ...)
-      {
-          task = newXMLNode("alternative", attrs = c(node$attributes, node$formatSpecific$rdb))
-          addChildren(task, kids = lapply(node$children, renderCellRdb, formatters = formatters, state = state, converters = converters, inline = FALSE, ...))
-          task
-      })
-
-setMethod("renderCellRdb", "AltMethodSetElement",
-          function(node, formatters, state, converters = list(), inline = FALSE,  ...)
-      {
-          task = newXMLNode("altApproaches", attrs = c(node$attributes, node$formatSpecific$rdb))
-          addChildren(task, kids = lapply(node$children, renderCellRdb, formatters = formatters, state = state, converters = converters, inline = FALSE, ...))
-          task
-      })
-
-setMethod("renderCellRdb", "AltMethodElement",
-          function(node, formatters, state, converters = list(), inline = FALSE,  ...)
-      {
-          task = newXMLNode("altApproach", attrs = c(node$attributes, node$formatSpecific$rdb))
-          addChildren(task, kids = lapply(node$children, renderCellRdb, formatters = formatters, state = state, converters = converters, inline = FALSE, ...))
-          task
-      })
-setMethod("renderCellRdb", "DecisionElement",
-          function(node, formatters, state, converters = list(), inline = FALSE,  ...)
-      {
-          task = newXMLNode("decision", attrs = c(node$attributes, node$formatSpecific$rdb))
-          addChildren(task, kids = lapply(node$children, renderCellRdb, formatters = formatters, state = state, converters = converters, inline = FALSE, ...))
-          task
-      })
-
-setMethod("renderCellRdb", "BranchElement",
-          function(node, formatters, state, converters = list(), inline = FALSE,  ...)
-      {
-          task = newXMLNode("alternative", attrs = c(node$attributes, node$formatSpecific$rdb))
-          addChildren(task, kids = lapply(node$children, renderCellRdb, formatters = formatters, state = state, converters = converters, inline = FALSE, ...))
-          task
-      })
-
-
-
-}
 
           
 
@@ -103,7 +41,7 @@ setMethod("renderCellRdb", "PyCodeElement",
           if(node$content == "%load_ext rmagic")
               return(NULL)
           else
-              newXMLNode("py:code", node$content, cdata = TRUE)
+              newXMLNode("py:code", paste(node$content, collapse="\n"), cdata = TRUE)
       })
 
 
@@ -115,7 +53,7 @@ setMethod("renderCellRdb", "RCodeElement",
               attrs = c(attrs, node$formatSpecific$rdb)
           if(!inline)
           {
-              code = newXMLNode("r:code", node$content, cdata = TRUE, attrs = attrs)
+              code = newXMLNode("r:code", paste(node$content , collapse="\n"), cdata = TRUE, attrs = attrs)
               if(doOutput && length(node$outputs))
               {
                   for(o in node$outputs)

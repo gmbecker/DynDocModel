@@ -34,7 +34,7 @@ addCellRdb = function(outdoc, content)
 {
     if(!is.list(content))
         content = list(content)
-    addChildren(outdoc, kids = content)
+    addChildren(xmlRoot(outdoc), kids = content)
 }
 
 

@@ -39,17 +39,21 @@ finishPDF = function(output, file, doc)
 
 finishRdb = function(output, file, doc)
 {
+    browser()
     #fix placement of code ndoes
-    nodestomove = xpathSApply(output, "//x:code[@in.last.para=='TRUE']", namespaces = c(r="http://www.r-project.org"))
+    nodestomove = xpathSApply(output, "//x:code[@in.last.para='TRUE']", namespaces = c(x="http://www.r-project.org"))
     for(nd in nodestomove)
     {
-        addChildren(getSibling(nd, after = FALSE), nd)
+        sib = getSibling(nd, after=FALSE)
+        while(xmlName(sib) != "para")
+            sib = getSibling(sib, after=FALSE)
+        addChildren(sib, nd)
     }
 
     saveXML(output, file = file)
 }
 
-finishRmd = finishRdb =   function(output, file, doc) stop("Not implemented yet")
+finishRmd =  function(output, file, doc) stop("Not implemented yet")
 
 
 DefaultFinishers <- list(

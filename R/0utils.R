@@ -72,3 +72,43 @@ is_selfOrEl = function(obj, cl)
 {
     is(obj, cl) || (is(obj, "ElementInstance") && is(obj$element, cl))
 }
+
+
+removeFancyQuotes = function(content)
+{
+
+    gsub("(\u201c|\u201d)", "\"",  content, useBytes = TRUE)
+
+}
+
+insertFancyQuotes = function(content)
+{
+    content = gsub("\"([^\"]*)\"", replacement= "\u201c\\1\u201d", content, useBytes = TRUE)
+    single = grep("^[^\"]*\"[^\"]*$", content, useBytes = TRUE)
+    if(length(single == 1))
+        content[single] = gsub("\"", "\u201c", useBytes = TRUE, content[single])
+    else if(length(single) > 1)
+    {
+        for(i in seq(1, length(single), by=2))
+        {
+            content[ single[i] ] = gsub("\"", "\u201c", useBytes = TRUE, content[single[i]])
+            content[ single[i+1] ] = gsub("\"", "\u201d", useBytes = TRUE, content[single[i+1]])
+        }
+    }
+    content
+            
+
+}
+
+detailLevel = function(el)
+{
+    if(is(el, "DynDoc") || is(el, "DocInstance"))
+       return(1)
+    if(is(el, "ElementInstance"))
+        el = el$element
+    #default is 1
+    ret = 1
+    if("detail" %in% names(el$attributes))
+        ret = el$attributes[["detail"]]
+    ret
+}

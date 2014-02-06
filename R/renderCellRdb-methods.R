@@ -1,15 +1,23 @@
 setMethod("renderCellRdb", "TextElement",
           function(node, formatters, state, converters = list(), inline = FALSE, doOutupt= FALSE, ...)
       {
+          if(is(node, "DbTextElement"))
+              return(node$content)
+          
+    
           convCont <- switch(class(node),
                              "MDTextElement" = convertContent(node$content, "markdown", "docbook", converters),
                              "TextElement" = convertContent(node$content, "raw", "docbook"),
-                             "DbTextElement" = node$content,
                              "LatexTextElement" = convertContent(node$content, "latex", "docbook", converters),
                              stop("unrecognized text element type: ", class(node))
                              )
-          if(is.character(convCont))
+
+          #for safety. Some stuff might be coming in in UTF-8, which breaks xmlParse
+          if(is(convCont, "character"))
+          {
+              convCont = iconv(convCont)
               convCont = xmlParse(convCont)
+          }
           convCont
       })
 

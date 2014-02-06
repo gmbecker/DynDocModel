@@ -2,7 +2,9 @@
 
 pandoc_convert = function(content, in_format = "markdown", out_format = "html", tmpfile = tempfile(), tmpout = makeOutName(tmpfile, out_format), extra_args = "")
 {
-
+    
+    #pandoc wants UTF-8 all the time!!!
+    content = iconv(content, to="UTF-8")
     tmpInName = paste(tmpfile, getPDExt(in_format), sep=".")
     writeTmpFile(content, tmpfile)
 
@@ -11,7 +13,12 @@ pandoc_convert = function(content, in_format = "markdown", out_format = "html", 
     if(is(e, "error"))
         stop("call to pandoc failed. Please make sure pandoc is installed. Exact command was ", cmd)
 
-    readTmpFile(tmpout, out_format)
+    out = readTmpFile(tmpout, out_format)
+    #pandoc returns UTF-8 all the time!!!
+    if(is.character(out))
+        iconv(out, from="UTF-8")
+    else
+        out
 }
 
 getPDExt = function(format)
@@ -36,20 +43,21 @@ setGeneric("writeTmpFile", function(obj, fname) standardGeneric("writeTmpFile"))
 setMethod("writeTmpFile", "XMLInteralNode",
           function(obj, fname)
       {
-          saveXML(obj, file = fname)
+          saveXML(obj, file = fname, encoding="UTF-8")
       })
 
 
 setMethod("writeTmpFile", "XMLInteralDocument",
           function(obj, fname)
       {
-          saveXML(obj, file = fname)
+          saveXML(obj, file = fname, encoding = "UTF-8")
       })
 
 setMethod("writeTmpFile", "character",
           function(obj, fname)
       {
-          writeLines(obj, con= fname)
+          #for safety. We put them back in once whe know where the content is going (ie not XML/HTML)
+          cat(obj, file= fname)
       })
 
 readTmpFile = function(file, format)
@@ -63,8 +71,9 @@ readTmpFile = function(file, format)
 
 readTmpDB = function(file)
 {
-    content = paste0("<tmproot>",paste(readLines(file), collapse = "\n"),"</tmproot>")
-    getNodeSet(xmlParse(content), "/tmproot/*")
+    content = paste0("<tmproot>",paste(readLines(file, encoding = "UTF-8"), collapse = "\n"),"</tmproot>")
+    content = removeFancyQuotes(content)
+    getNodeSet(xmlParse(content, encoding="UTF-8"), "/tmproot/*")
 
 }
 
@@ -77,6 +86,7 @@ readTmpHTML = function(file)
 
 rawToDB = function(txt)
 {
+    txt = removeFancyQuotes(txt)
     blank = grepl("^$", txt)
     
     pars = split(txt, cumsum(blank))

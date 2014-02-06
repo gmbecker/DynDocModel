@@ -1,5 +1,5 @@
 
-readIPyNotebook = function(filename, rlist = fromJSON(filename), ...)
+readIPyNotebook = function(filename, rlist = fromJSON(filename, encoding="UTF-8"), ...)
   {
     fspec = rlist[!(names(rlist) %in% c("metadata", "worksheets"))]
     doc = dynDoc$new(metadata = as.list(rlist$metadata), formatSpecific =as.list(fspec))
@@ -32,7 +32,7 @@ processEl = function(el, parent= NULL)
 mdElFromIPN = function(el, parent)
 {
     mdat = splitMetadata(el$metadata)
-    newel = mdElement$new(content=el$source, parent = parent, attributes = mdat$attrs, formatSpecific = list(metadata = mdat$formspec))
+    newel = mdElement$new(content=el$source, encoding = "UTF-8", parent = parent, attributes = mdat$attrs, formatSpecific = list(metadata = mdat$formspec))
     parent$addChild(newel)
     newel
   }
@@ -40,7 +40,7 @@ mdElFromIPN = function(el, parent)
 textElFromIPN = function(el, parent)
   {
       mdat = splitMetadata(el$metadata)
-    newel = textElement$new(content=el$source, parent = parent, attributes = mdat$attrs, formatSpecific = list(metadata = mdat$formspec))
+    newel = textElement$new(content=el$source, encoding="UTF-8", parent = parent, attributes = mdat$attrs, formatSpecific = list(metadata = mdat$formspec))
     parent$addChild(newel)
 #    parent
     newel
@@ -253,5 +253,29 @@ splitMetadata = function(meta)
     list(attrs = attrs, formspec = formspec)
 }
 
+removeFancyQuotes = function(content)
+{
 
+    gsub("(\u201c|\u201d)", "\"",  content, useBytes = TRUE)
+
+}
+
+insertFancyQuotes = function(content)
+{
+    content = gsub("\"([^\"]*)\"", replacement= "\u201c\\1\u201d", content, useBytes = TRUE)
+    single = grep("^[^\"]*\"[^\"]*$", content, useBytes = TRUE)
+    if(length(single == 1))
+        content[single] = gsub("\"", "\u201c", useBytes = TRUE, content[single])
+    else if(length(single) > 1)
+    {
+        for(i in seq(1, length(single), by=2))
+        {
+            content[ single[i] ] = gsub("\"", "\u201c", useBytes = TRUE, content[single[i]])
+            content[ single[i+1] ] = gsub("\"", "\u201d", useBytes = TRUE, content[single[i+1]])
+        }
+    }
+    content
+            
+
+}
 

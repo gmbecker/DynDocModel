@@ -25,6 +25,9 @@ setClass("IWidgetSlider", representation(range = "numeric",
 setClass("IWidgetTextbox", contains = "IWidget")
 setClass("IWidgetIntTextbox", contains = "IWidgetTextbox")
 setClass("IWidgetNumTextbox", contains = "IWidgetTextbox")
+setClass("IWidgetSelector", representation(values = "list", labels="list"), contains = "IWidget")
+setClass("IWidgetDropDownMenu", contains = "IWidgetSelector")
+setClass("IWidgetRadioButton", contains = "IWidgetSelector")
 
 dynDoc = setRefClass("DynDoc", fields = list(
                                    .envir = "environment",
@@ -219,6 +222,12 @@ containerElement = setRefClass("ContainerElement", contains = "DocElement",
             .self$outvars = retout
             
         },
+      removeChild = function(oldel)
+        {
+            children <<- children[-oldel$posInParent]
+            oldel$parent = NULL
+            oldel$posInParent = 0
+        },
         addChild = function(newel)
         {
             newpos = length(children) + 1
@@ -288,7 +297,7 @@ codeElement = setRefClass("CodeElement", contains = "DocElement",
             else
                 {
                     .content <<- value
-                    valhash = digest(value)#digest(unparse(parse(text=value)))
+                    valhash = fastdigest(value)#digest(unparse(parse(text=value)))
                                         #the first time content is added during construction, codehash will be character(0)
                     if(length(codehash) && valhash != codehash)
                         {
@@ -312,7 +321,7 @@ rCodeElement = setRefClass("RCodeElement", contains = "CodeElement",
                     if(!is.character(value))
                         value = deparse(value, control="all")
                     .content <<- value
-                    valhash = digest(unparse(parse(text=value, keep.source=FALSE)))
+                    valhash = fastdigest(unparse(parse(text=value, keep.source=FALSE)))
                     
                     if(length(codehash) && valhash != codehash)
                         {
@@ -380,7 +389,7 @@ outputElement = setRefClass("OutputElement", contains = "DocElement",
         ))
 
 textElement = setRefClass("TextElement", contains="DocElement",
-    fields = list(content="ANY"))
+    fields = list(content="ANY", encoding = "character"))
 
 mdElement = setRefClass("MDTextElement", contains="TextElement")
 

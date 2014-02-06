@@ -1,6 +1,6 @@
 finishIPyNB = function(output, file, doc)
 {
-    cat(file = file, toJSON(output))
+    cat(file = file, toJSON(output, .withNames = TRUE))
     if(inherits(file, "connection"))
         close(file)
 }

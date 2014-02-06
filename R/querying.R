@@ -9,6 +9,7 @@ getThread <- function(doc,
                       use_abbrev = TRUE,
                       check_valid = TRUE,
                       cache = doc$cacheEngine,
+                      detail_level =1, 
                       ...)
 {
 
@@ -18,41 +19,56 @@ getThread <- function(doc,
         start = doc[[start]]
     if(is.numeric(end) || is.integer(end))
         end = doc[[end]]
-    findPath(doc, start, end, visit = branches, check_valid = check_valid, cacheEngine = cache, ...)
+    findPath(doc, start, end, visit = branches, check_valid = check_valid, cacheEngine = cache, detail_level = detail_level, ...)
     
 }
 
-findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = TRUE, cacheEngine = doc$cacheEngine, ...)
+findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = TRUE, cacheEngine = doc$cacheEngine, detail_level = 1, ...)
 {
     curlev = list()
     curel = end
-    
-    while(!sameElement(start, curel))
+    # we need to handle the case where the document only has one top level element. It could be a single piece of content, but could also be a task/decision.
+    if(sameElement(start, end))
     {
-#        inst = makeInstance(curel, doKids = FALSE, branchInstr = visit)
-        inst = makeInstance(curel,  branchInstr = visit, doKids = TRUE, cacheEngine = cacheEngine)
+        if(detailLevel(end) <= detail_level)
+            curlev = list(makeInstance(end, branchInstr = visit, doKids = TRUE, cacheEngine = cacheEngine))
+    } else {
         
-        sibs = getSiblings(curel, posType = "before")
-        if(length(sibs))
+        while(!sameElement(start, curel))
         {
-            curel = sibs[[length(sibs)]]
-            curlev = c(inst, curlev)
-        } else {
-            if(!is(curel$parent, "DynDoc"))
+                                        #        inst = makeInstance(curel, doKids = FALSE, branchInstr = visit)
+            inst = makeInstance(curel,  branchInstr = visit, doKids = TRUE, cacheEngine = cacheEngine)
+            
+            sibs = getSiblings(curel, posType = "before")
+            if(length(sibs))
             {
-                curel = curel$parent
-                inst$children = curlev
-                curlev = list(inst)
+                curel = sibs[[length(sibs)]]
+                if(detailLevel(inst) <= detail_level)
+                    curlev = c(inst, curlev)
             } else {
-                if(stop_on_fail)
-                    stop("Unable to determine path between start and end elements")
-                else
-                    return(NULL)
+                if(!is(curel$parent, "DynDoc"))
+                {
+                    curel = curel$parent
+                    inst$children = curlev
+                    if(detailLevel(inst) <= detail_level)
+                        curlev = list(inst)
+                    else
+                        curlev = list()
+                } else {
+                    if(stop_on_fail)
+                        stop("Unable to determine path between start and end elements")
+                    else
+                        return(NULL)
+                }
             }
         }
+        #make sure the thread visits the specified start element
+        if(!is_selfOrEl(start, "DecisionElement"))
+        {
+            startInst = makeInstance(start, visit, doKids = TRUE)
+            curlev = c(startInst, curlev)
+        }
     }
-    
-    curlev= c(start, curlev)
     
     if(check_valid)
     {
@@ -88,7 +104,7 @@ getSiblings = function(el, posType = c("all", "before", "after"))
     sibs[inds]
 }
 
-makeInstance = function(el, branchInstr = list(), doKids = TRUE, doBranchSets = FALSE, cacheEngine = el$cacheEngine, ...)
+makeInstance = function(el, branchInstr = list(), doKids = TRUE, cacheEngine = el$cacheEngine, ...)
 {
     if(is(el, "ElementInstance"))
     {
@@ -209,58 +225,64 @@ checkNodeAttrs = function(node, attrs)
 
 
 #this implementation will probably be really slow
-getAllThreads = function(doc, start = 1 , end = length(doc$children) , only_valid=TRUE)
+#it is, and it's a problem! XXX
+getAllThreads = function(doc, start = 1 , end = length(doc$children) , only_valid=TRUE, detail_level = 1)
 {
     
-    branchInstr = expandBranches(doc)
+    branchInstr = expandBranches(doc, detail_level = detail_level, start = start, end = end)
     if(!length(branchInstr))
         branchInstr = list(list())
     
-    ret = lapply(branchInstr, function(instr) getThread(doc, start = start, end = end, branches = instr, check_valid = only_valid, stop_on_fail=FALSE))
+    ret = lapply(branchInstr, function(instr) getThread(doc, start = start, end = end, branches = instr, check_valid = only_valid, stop_on_fail=FALSE, detail_level = detail_level))
     as(ret, "ThreadList")
 }
 
 
 
-expandBranches = function(parent, prev = list())
+expandBranches = function(parent, prev = list(), detail_level = 1, start = NULL, end = NULL)
 {
     
-    altsets = getFirstBranchings(parent)
+    altsets = getFirstBranchings(parent, detail_level = detail_level, start = start, end = end)
          ret = list(prev)
 
     for(pt in altsets)
     {
         onestep = list()
         for(br in pt$children)
-            onestep = c(onestep,  expandBranches(br, prev = list(br)))
+            onestep = c(onestep,  expandBranches(br, prev = list(br), detail_level = detail_level, start = NULL, end = NULL))
         ret = allCombos(ret, onestep)
     }
     ret
 }
 
-allCombos = function(lst, add, rev = FALSE)
-{
-    ret = rep(lst, times = length(add))
-    toadd = rep(add, times = rep(length(lst), times = length(add)))
-    mapply(function(x,y) if(!rev) c(x,y) else c(y,x) , ret, toadd, SIMPLIFY = FALSE)
-}
 
 
-
-getFirstBranchings = function(el, found = NULL)
+getFirstBranchings = function(el, found = NULL, start = NULL, end = NULL, detail_level = 1)
 {
     kids = list()
+    if(detailLevel(el)  > detail_level)
+        return(found)
+    
     if(is(el, "DynDoc"))
         kids = el$children
     else if (is(el, "ContainerElement") || is(el, "ElementInstance"))
         kids = el$children
+
+    if(length(kids) && (!is.null(start) || !is.null(end)))
+    {
+        if(is.null(start))
+           start = 1
+        if(is.null(end))
+            end = length(kids)
+        kids = kids[start:end]
+    }
     
-    .getFirstBranchings(kids, found)
+    .getFirstBranchings(kids, found, detail_level = detail_level)
 }
 
-.getFirstBranchings = function(kids, found = list())
+.getFirstBranchings = function(kids, found = list(), detail_level = 1)
 {
-    possible = sapply(kids, function(x) is_selfOrEl(x, "ContainerElement"))
+    possible = sapply(kids, function(x) is_selfOrEl(x, "ContainerElement") && detailLevel(x) <= detail_level)
     
     if(!any(possible))
         return(found)
@@ -272,11 +294,23 @@ getFirstBranchings = function(el, found = NULL)
         if(is_selfOrEl(kid, "DecisionElement"))
             found = c(found, kid)
         else
-            found = getFirstBranchings(kid, found = found)
+            found = getFirstBranchings(kid, found = found, detail_level = detail_level)
     }
                                         #    unlist(c(found, fnd))
     unlist(found)
 }
+
+
+
+
+allCombos = function(lst, add, rev = FALSE)
+{
+    ret = rep(lst, times = length(add))
+    toadd = rep(add, times = rep(length(lst), times = length(add)))
+    mapply(function(x,y) if(!rev) c(x,y) else c(y,x) , ret, toadd, SIMPLIFY = FALSE)
+}
+
+
 
 
 

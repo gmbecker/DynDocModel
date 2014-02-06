@@ -26,11 +26,11 @@ setMethod("renderCellIPyNB", "CodeElement",
               listout=list()
   
 
-            listout$metadata = node$attributes
+            listout$metadata = ipynbMetadata(node$attributes)
             
             listout$cell_type = "code"
             listout$language = "python"
-            listout$input = list(paste(c(magic, node$content), collapse="\n"))
+            listout$input = paste(c(magic, node$content), collapse="\n")
             if(doOutputs)
                 listout$outputs = lapply(node$outputs, renderCellIPyNB, formatters = formatters, ...)
             listout
@@ -44,7 +44,7 @@ setMethod("renderCellIPyNB", "OutputElement",
               listout = do.call(list, node$formatSpecific)
             else
               listout=list()
-            listout$metadata = node$attributes
+            listout$metadata = ipynbMetadata(node$attributes)
             listout$cell_type="output"
             listout$output_type = node$format
             listout$text = paste(node$content, collapse="")
@@ -60,7 +60,7 @@ setMethod("renderCellIPyNB", "TextElement",
             else
                 listout=list()
             
-            listout$metadata = node$attributes
+            listout$metadata = ipynbMetadata(node$attributes)
             convCont <- switch(class(node),
                                "MDTextElement" = node$content,
                                "TextElement" = node$content,
@@ -68,14 +68,21 @@ setMethod("renderCellIPyNB", "TextElement",
                                "LatexTextElement" = convertContent(node$content, "latex", "markdown", converters),
                                stop("unrecognized text element type: ", class(node))
                                )
+            
+            #IPython Notebook does all it's encoding in UTF-8
+#            convCont = iconv(convCont, to="UTF-8")
+            #It also uses fancy opening and closing doublequotes.
+ #           convCont = insertFancyQuotes(convCont)
+            
             if(class(node) == "TextElement")
                 type = "raw"
             else
                 type = "markdown"
             listout$cell_type = type
             
-            
-            listout$source = list(paste(convCont, collapse = "\n"))
+#            browser()
+    #        listout$source = list(paste(convCont, collapse = "\n"))
+            listout$source = convCont
             listout
           })
 
@@ -84,11 +91,11 @@ setMethod("renderCellIPyNB", "MixedMDElement",
       {
           warning("IPython Notebook does not currently support mixed prose/code cells. Treating cell as pure markup")
           
-           if(!is.null(node$formatSpecific) && !is.null(null$formatSpecific$ipynb))
+           if(!is.null(node$formatSpecific) && !is.null(node$formatSpecific$ipynb))
               listout = do.call(list, node$formatSpecific$ipynb)
             else
               listout=list()
-          listout$metadata = node$attributes
+          listout$metadata = ipynbMetadata(node$attributes)
           listout$cell_type = "markdown"
           listout$content = paste(sapply(node$children,
                                           function(x) {
@@ -103,12 +110,12 @@ setMethod("renderCellIPyNB", "MixedMDElement",
 setMethod("renderCellIPyNB", "TaskElement",
           function(node, formatters, ...)
           {
-              if(!is.null(node$formatSpecific) && !is.null(null$formatSpecific$ipynb))
+              if(!is.null(node$formatSpecific) && !is.null(node$formatSpecific$ipynb))
                   listout = do.call(list, node$formatSpecific$ipynb)
               else
                   listout=list()
             
-            listout$metadata = node$attributes
+            listout$metadata = ipynbMetadata(node$attributes)
             listout$cell_type = "task"
             listout$cells = lapply(node$children, renderCellIPyNB, formatters = formatters, ...)
             listout
@@ -117,12 +124,12 @@ setMethod("renderCellIPyNB", "TaskElement",
 setMethod("renderCellIPyNB", "DecisionElement",
           function(node, formatters, ...)
           {
-              if(!is.null(node$formatSpecific) && !is.null(null$formatSpecific$ipynb))
+              if(!is.null(node$formatSpecific) && !is.null(node$formatSpecific$ipynb))
                   listout = do.call(list, node$formatSpecific$ipynb)
               else
                   listout=list()
 
-              listout$metadata = node$attributes
+              listout$metadata = ipynbMetadata(node$attributes)
               listout$cell_type = "altset"
               listout$cells = lapply(node$children, renderCellIPyNB, formatters = formatters, ...)
               listout
@@ -131,12 +138,12 @@ setMethod("renderCellIPyNB", "DecisionElement",
 setMethod("renderCellIPyNB", "BranchElement",
           function(node, formatters, ...)
           {
-              if(!is.null(node$formatSpecific) && !is.null(null$formatSpecific$ipynb))
+              if(!is.null(node$formatSpecific) && !is.null(node$formatSpecific$ipynb))
                   listout = do.call(list, node$formatSpecific$ipynb)
               else
                   listout=list()
 
-              listout$metadata = node$attributes
+              listout$metadata = ipynbMetadata(node$attributes)
               listout$cell_type = "alt"
               listout$cells = lapply(node$children, renderCellIPyNB, formatters = formatters, ...)
               listout
@@ -228,4 +235,12 @@ ipynbDoPNG = function(fout)
     if(!(fout@info$format == "png"))
         stop("This image is not a png! other image formats are not yet supported")
     base64encode(fout@value)
+}
+
+ipynbMetadata = function(attrs)
+{
+    if(length(attrs))
+        attrs
+    else
+        emptyNamedList
 }

@@ -23,7 +23,7 @@ getThread <- function(doc,
     
 }
 
-findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = TRUE, cacheEngine = doc$cacheEngine, detail_level = 1, ...)
+findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = TRUE, cacheEngine = doc$cacheEngine, detail_level = 1, decisions_only = FALSE, ...)
 {
     curlev = list()
     curel = end
@@ -36,21 +36,32 @@ findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = T
         
         while(!sameElement(start, curel))
         {
-                                        #        inst = makeInstance(curel, doKids = FALSE, branchInstr = visit)
-            inst = makeInstance(curel,  branchInstr = visit, doKids = TRUE, cacheEngine = cacheEngine)
-            
+            #makeInstance is expensive, we want to avoid it when we just want the decision elements
+            if(!decisions_only)
+                inst = makeInstance(curel,  branchInstr = visit, doKids = TRUE, cacheEngine = cacheEngine)
+            else if(is(curel, "DecisionElement"))
+            {
+                
+                inst = getBranchTarget(curel, branchInstr = visit)$target
+            } else {
+                inst = NULL
+            }
+
+            toAdd = (!decisions_only || is(curel, "DecisionElement")) && (detailLevel(curel) <= detail_level)
+               
             sibs = getSiblings(curel, posType = "before")
             if(length(sibs))
             {
                 curel = sibs[[length(sibs)]]
-                if(detailLevel(inst) <= detail_level)
+                if(toAdd)
                     curlev = c(inst, curlev)
+               
             } else {
                 if(!is(curel$parent, "DynDoc"))
                 {
                     curel = curel$parent
                     inst$children = curlev
-                    if(detailLevel(inst) <= detail_level)
+                    if(toAdd)
                         curlev = list(inst)
                     else
                         curlev = list()
@@ -63,7 +74,7 @@ findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = T
             }
         }
         #make sure the thread visits the specified start element
-        if(!is_selfOrEl(start, "DecisionElement"))
+        if(!is_selfOrEl(start, "DecisionElement") && !decisions_only)
         {
             startInst = makeInstance(start, visit, doKids = TRUE)
             curlev = c(startInst, curlev)
@@ -81,8 +92,10 @@ findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = T
                 return(NULL)
         }
     }
-
-    new("DocThread", children = curlev, parentDoc = doc, cacheEngine = cacheEngine, ...)
+    if(!decisions_only)
+        new("DocThread", children = curlev, parentDoc = doc, cacheEngine = cacheEngine, ...)
+    else
+        curlev
 }
 
 getSiblings = function(el, posType = c("all", "before", "after"))
@@ -117,7 +130,9 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE, cacheEngine = e
     
     if(is(el, "DecisionElement"))
     {
-
+        if(FALSE)
+        {
+            
         if(is(branchInstr, "BranchElement"))
             branchInstr = list(branchInstr)
         for(i in seq(along = branchInstr))
@@ -135,6 +150,10 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE, cacheEngine = e
             nonterms=1
         }
         ret = makeInstance(el[[ nonterms[1] ]], doKids = TRUE, branchInstr= branchInstr, cacheEngine = cacheEngine, ...)
+
+    }
+        targ = getBranchTarget(el, branchInstr)
+        ret = makeInstance(targ$target, doKids = TRUE, branchInstr = branchInstr[targ$keepInstr], cacheEngine = cacheEngine, ...)
         
 #This used to differentiate between things that should get passed doChildren=TRUE and doChildren=FALSE, but nested tasks weren't resolving properly...
  #   }else if(is(el, "MixedTextElement") || (is(el, "ContainerElement") && doKids)) {
@@ -149,67 +168,27 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE, cacheEngine = e
 
 
 
-subquery = function(start, type=character(), attrs=list(), position=integer(), fun = NULL, all.levels = FALSE, parent=FALSE)
+getBranchTarget = function(dec, branchInstr)
 {
-    if(!is.null(fun) && (length(type) || length(attrs) ))
-        warning("filter function (fun) and other attributes (type, attrs) were specified for subquery. Only filter function and position will be applied.")
-    
-                                        #if we have multiple starting points, eg the output of a previous call to subquery, query each one one at a time and combine the results
-    if(is(start, "list"))
-    {
-        ret = unlist(lapply(start, subquery, type=type, attrs = attrs, fun = fun, all.levels = all.levels), recursive=FALSE)
-        return(as(ret, "ElementList"))
-    }
-    
-    if(is(start, "DynDoc"))
-    {
-        if(!parent)
-            els = start$children
-        else
-            return(as(list(), "ElementList")) #there are no parents
-    }
-    else if (is(start, "ContainerElement"))
-        if(!parent)
-            els = start$children
-        else
-        {
-            if(is(start$parent, "DynDoc") || is.null(start$parent))
-                return(as(list(), "ElementList")) #there are no parent elements
-            else
-                els = as(list(start$parent), "ElementList")
-        }
-  else
-      return(as(list(), "ElementList"))# we are at a terminal node, no children to check.
+        if(is(branchInstr, "BranchElement"))
+            branchInstr = list(branchInstr)
 
-    ret = els ##initialize to the full list, then pare down
-    if(!is.null(fun))
-        ret = ret[sapply(els, fun)]
-    else
-    {
-        if(length(type))
+        indexes = seq(along = branchInstr)
+        for(i in indexes)
         {
-            matches.type = sapply(ret, function(el) any(sapply(doAbbrevType(type), function(cl) is(el, cl))))
-            ret = ret[matches.type]
+            target = branchInstr[[i]]
+            found = sapply(dec$children, sameElement, el2 = target)
+            if(any(found))
+                return(list(target = target, instrKeep = indexes[-i]))
         }
-        if (length(attrs))
+        warning("No branch selection instructions for this set of branches. Selecting first non-terminal branch.")
+        nonterms = which(sapply(dec$children, function(x) !is_termBranch(x) ) )
+        if(!length(nonterms))
         {
-            matches.attr = sapply(ret, checkNodeAttrs, attrs = attrs)
-            ret = ret[matches.attr]
+            warning("No non-terminal branches found to select as default branch, using first branch.")
+            nonterms=1
         }
-                                        #This represents position in the result set, ie I want the third text element, NOT posInParent
-        
-    }
-    if(all.levels)
-                                        #if we are searching through the whole (sub)tree, apply the same query to all children of start (this is recursive)
-    #This search is breadth first NOT depth first
-        ret = c(ret, subquery(els, type=type, attrs = attrs, fun=fun, all.levels=TRUE, parent = parent))
-    if(length(position))
-    {
-        matches.pos = position[position < length(ret)]
-        ret = ret[matches.pos]
-    }
-    
-    return(as(ret, "ElementList"))
+        list(target = dec[[ nonterms[1] ]], instrKeep = indexes)
 }
 
 
@@ -310,8 +289,75 @@ allCombos = function(lst, add, rev = FALSE)
     mapply(function(x,y) if(!rev) c(x,y) else c(y,x) , ret, toadd, SIMPLIFY = FALSE)
 }
 
+getAllThreads2 = function(doc, start = 1, end = length(doc$children), detail_level= 1, branches = NULL, branch_path = NULL, use_abbrev = TRUE, check_valid = TRUE, cache = doc$cacheEngine, ...)
+{
+   if(is.null(branches) && !is.null(branch_path) && nchar(branch_path))
+        branches = dyndoc_rpath(doc, branch_path)
+    if(is.numeric(start) || is.integer(start))
+        start = doc[[start]]
+    if(is.numeric(end) || is.integer(end))
+        end = doc[[end]]
+ 
+    freedecs = getFreeDecs(doc, start = start, end = end, detail_level = detail_level, branches = branches, cache = cache, check_valid = check_valid)
+
+   instrSets = list(branches)
+   for(dec in freedecs)
+   {
+
+       allbrs = unlist(lapply(dec$children, function(x) expandBranches(x, prev = list(x))), recursive = FALSE)
+#       allbrs = expandBranches(dec, prev = dec$children)
+       #expandBranches returns list(list()) when there is no nesting
+       #if the refactor goes through I'll probably want to change that...
+ #      if(!length(unlist(allbrs)) && is(dec, "DecisionElement"))
+  #         allbrs = dec$children
+       instrSets = allCombos(instrSets, allbrs)
+   }
+
+   threads = lapply(instrSets, function(instr) getThread(doc, start, end, branches = instr, detail_level = detail_level, cache = cache, check_valid = check_valid, use_abbrev = use_abbrev))
+   as(threads, "ThreadList")
+}
+    
+
+getFreeDecs = function(doc, start, end, detail_level, branches = NULL, cache, check_valid, ...)
+{
+    
+    alldecs = findPath(doc, start, end, visit = branches, check_valid = check_valid, cacheEngine = cache, detail_level = detail_level, decisions_only = TRUE, ...)
+
+    #the above returns the branches currently. Annoyiinng
+    alldecs = sapply(alldecs, function(x) x$parent)
+
+    #decisions which are direct ancestors of the specified end element are not "free", because we have to choose a specific set o alternatives to arrive at end.
+    #identify and remove decisions which are fixed due to branch or endpoint instructions
+    branches = c(branches, end)
+    for( i in seq(along = branches))
+    {
+        alldecs = remAncestors(alldecs, branches[[i]])
+    }
+
+    #nesting is imperfectly handled here, so we remove the ones we catch and then catch them all later
+    for(j in seq(along=alldecs))
+    {
+        alldecs = remAncestors(alldecs, alldecs[[j]])
+    }
+
+    alldecs
+
+}
 
 
+remAncestors = function(decList, element)
+{
+    retList = decList
+    curel = element$parent
+    while(!is(curel, "DynDoc"))
+    {
+        found = sapply(retList, function(x) sameElement(x, curel))
+        retList = retList[!found]
+        curel = curel$parent
+    }
+    retList
+}
+        
 
 
 

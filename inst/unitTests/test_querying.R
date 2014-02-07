@@ -11,7 +11,7 @@ test_getThread1Dec = function()
     decEl = branchSetElement$new(children = list(alt1, alt2))
     doc = dynDoc$new(children = list(decEl))
     thr1 = getThread(doc)
-    checkTrue(length(thr1$children) == 1 && is_selfOrEl(thr1[[1]], "BranchElement") #should contain just a single branch instance
+    checkTrue(length(thr1$children) == 1 && is_selfOrEl(thr1[[1]], "BranchElement")) #should contain just a single branch instance
     checkTrue(thr1[[1]][[1]]$element$content == "branch 1 content")
 }
 
@@ -22,7 +22,7 @@ test_getThread1Task = function()
     task1 = taskElement$new(children = list(text1, text2))
     doc = dynDoc$new(children = list(task1))
     thr1 = getThread(doc)
-    checkTrue(length(thr1$children) == 1 && is_selfOrEl(thr1[[1]], "TaskElement") #should contain just a single branch instance
+    checkTrue(length(thr1$children) == 1 && is_selfOrEl(thr1[[1]], "TaskElement")) #should contain just a single branch instance
     checkEquals(sapply(thr1[[1]]$children, function(x) x$element$content),c("content 1", "content 2"))
 }
 

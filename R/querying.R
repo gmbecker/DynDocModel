@@ -130,36 +130,10 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE, cacheEngine = e
     
     if(is(el, "DecisionElement"))
     {
-        if(FALSE)
-        {
-            
-        if(is(branchInstr, "BranchElement"))
-            branchInstr = list(branchInstr)
-        for(i in seq(along = branchInstr))
-        {
-            target = branchInstr[[i]]
-            found = sapply(el$children, sameElement, el2 = target)
-            if(any(found))
-                return(makeInstance(target, doKids = TRUE, ..., branchInstr = branchInstr[-i], cacheEngine = cacheEngine))
-        }
-        warning("No branch selection instructions for this set of branches. Selecting first non-terminal branch.")
-        nonterms = which(sapply(el$children, function(x) !is_termBranch(x) ) )
-        if(!length(nonterms))
-        {
-            warning("No non-terminal branches found to select as default branch, using first branch.")
-            nonterms=1
-        }
-        ret = makeInstance(el[[ nonterms[1] ]], doKids = TRUE, branchInstr= branchInstr, cacheEngine = cacheEngine, ...)
-
-    }
         targ = getBranchTarget(el, branchInstr)
         ret = makeInstance(targ$target, doKids = TRUE, branchInstr = branchInstr[targ$keepInstr], cacheEngine = cacheEngine, ...)
         
-#This used to differentiate between things that should get passed doChildren=TRUE and doChildren=FALSE, but nested tasks weren't resolving properly...
- #   }else if(is(el, "MixedTextElement") || (is(el, "ContainerElement") && doKids)) {
-        
-  #      ret = new("ElementInstance", element = el, doChildren = TRUE, branchInstructs = branchInstr, cacheEngine = cacheEngine, ...)
-    } else {
+    } else { #not a decision element
         ret = new("ElementInstance", element = el, doChildren = TRUE, cacheEngine = cacheEngine, branchInstr = branchInstr, ...)
     }
     
@@ -167,7 +141,8 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE, cacheEngine = e
 }
 
 
-
+#accepts decision element and a list of branches the full thread will visit
+#returns the correct alternative element in $target and the indexes of the remaining (unused) branch instructions in $instrKeep
 getBranchTarget = function(dec, branchInstr)
 {
         if(is(branchInstr, "BranchElement"))
@@ -203,18 +178,6 @@ checkNodeAttrs = function(node, attrs)
 }
 
 
-#this implementation will probably be really slow
-#it is, and it's a problem! XXX
-getAllThreads = function(doc, start = 1 , end = length(doc$children) , only_valid=TRUE, detail_level = 1)
-{
-    
-    branchInstr = expandBranches(doc, detail_level = detail_level, start = start, end = end)
-    if(!length(branchInstr))
-        branchInstr = list(list())
-    
-    ret = lapply(branchInstr, function(instr) getThread(doc, start = start, end = end, branches = instr, check_valid = only_valid, stop_on_fail=FALSE, detail_level = detail_level))
-    as(ret, "ThreadList")
-}
 
 
 
@@ -289,7 +252,7 @@ allCombos = function(lst, add, rev = FALSE)
     mapply(function(x,y) if(!rev) c(x,y) else c(y,x) , ret, toadd, SIMPLIFY = FALSE)
 }
 
-getAllThreads2 = function(doc, start = 1, end = length(doc$children), detail_level= 1, branches = NULL, branch_path = NULL, use_abbrev = TRUE, check_valid = TRUE, cache = doc$cacheEngine, ...)
+getAllThreads = function(doc, start = 1, end = length(doc$children), detail_level= 1, branches = NULL, branch_path = NULL, use_abbrev = TRUE, check_valid = TRUE, cache = doc$cacheEngine, ...)
 {
    if(is.null(branches) && !is.null(branch_path) && nchar(branch_path))
         branches = dyndoc_rpath(doc, branch_path)
@@ -305,11 +268,6 @@ getAllThreads2 = function(doc, start = 1, end = length(doc$children), detail_lev
    {
 
        allbrs = unlist(lapply(dec$children, function(x) expandBranches(x, prev = list(x))), recursive = FALSE)
-#       allbrs = expandBranches(dec, prev = dec$children)
-       #expandBranches returns list(list()) when there is no nesting
-       #if the refactor goes through I'll probably want to change that...
- #      if(!length(unlist(allbrs)) && is(dec, "DecisionElement"))
-  #         allbrs = dec$children
        instrSets = allCombos(instrSets, allbrs)
    }
 
@@ -345,6 +303,8 @@ getFreeDecs = function(doc, start, end, detail_level, branches = NULL, cache, ch
 }
 
 
+#accepts a list of elements (decList) and a single element
+#returns the list with entries that were ancestors of element removed
 remAncestors = function(decList, element)
 {
     retList = decList

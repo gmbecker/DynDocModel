@@ -97,7 +97,7 @@ dynDoc = setRefClass("DynDoc", fields = list(
         initialize = function(cacheEngine, ...)
         {
             if(missing(cacheEngine))
-                cEngine = cachingEngine( base_dir = "./r_caches/", eval_fun = parseWithVis, return_handler = wVGraphicsHandler)
+                cEngine = cachingEngine( base_dir = "./r_caches/", eval_fun = parseWithVis, return_handler = withVisRaw)
             else
                 cEngine = cacheEngine
             callSuper(cacheEngine = cEngine, ...)
@@ -131,7 +131,7 @@ docElement = setRefClass("DocElement",
                 if("parent" %in% names(args))
                     cEngine = args$parent$cacheEngine
                 else
-                    cEngine = new("CachingEngine", base_dir = "./r_caches/", return_handler = wVGraphicsHandler, eval_fun = parseWithVis)
+                    cEngine = new("CachingEngine", base_dir = "./r_caches/", return_handler = withVisRaw, eval_fun = parseWithVis)
             } else {
                 cEngine = cacheEngine
             }
@@ -484,7 +484,7 @@ elementInstance <- setRefClass("ElementInstance",
                                    if(!is.null(list(...)$element))
                                        cacheEngine = list(...)$element$cacheEngine
                                    else
-                                       cacheEngine = new("CachingEngine", base_dir = "./r_caches/", return_handler = wVGraphicsHandler, eval_fun = parseWithVis)
+                                       cacheEngine = new("CachingEngine", base_dir = "./r_caches/", return_handler = withVisRaw, eval_fun = parseWithVis)
                                }
                                callSuper(envir = env,  cacheEngine = cacheEngine, ...)
                                if(doChildren)
@@ -537,7 +537,7 @@ setRefClass("DocInstance",
                         if("parentDoc" %in% names(args))
                             cEngine = args$parentDoc$cacheEngine
                         else
-                            cEngine = new("CachingEngine", base_dir = "./r_caches/", eval_fun = parseWithVis, return_handler = wVGraphicsHandler)
+                            cEngine = new("CachingEngine", base_dir = "./r_caches/", eval_fun = parseWithVis, return_handler = withVisRaw)
                     } else {
                         cEngine = cacheEngine
                     }

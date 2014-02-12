@@ -136,7 +136,7 @@ mdHandleFormatted = function(fout, inline, state)
 doImage = function(fobject, state, dataURI = FALSE)
 {
     #XXX this looks like it is working upon inspection, but then the image doesn't load properly
-    if(dataURI){
+    if(dataURI || is.null(state$outdir)){
         tfile = tempfile()
         writeBin(fobject@value, tfile)
         img(tfile)

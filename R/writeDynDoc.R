@@ -41,8 +41,11 @@ writeDynDoc = function(doc,
 
     state = new.env()
     state$plots = 1
-    state$outdir = dirname(file)
+    if(!missing(file))
+    {
+        state$outdir = dirname(file)
     state$basePlotName = paste(gsub("(.*)\\..*$", "\\1", basename(file)), "plot", sep="_")
+    }
     out = init.output(file, doc)
  
     foundRenderers = list()

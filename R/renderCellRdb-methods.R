@@ -101,6 +101,11 @@ dbDoImage = function(fobject, state, code)
 {
                                         #XXX this looks like it is working upon inspection, but then the image doesn't load properly
                                         #XXX come up with a better naming scheme!!!!
+    if(is.null(state$outdir))
+    {
+        warning("Inline images not supported for formatting into Rdb")
+        return(NULL)
+    }
     imdir = file.path(state$outdir, "images")
     if(!file.exists(imdir))
         dir.create(imdir, recursive = TRUE)

@@ -53,3 +53,21 @@ collapseAltImplSet = function(altset)
     pos = altset$posInParent
     parent$insertChildren(gkids, pos)
   }
+
+
+decisionToParTask = function(dec)
+{
+    parent = dec$parent
+    pos = dec$posInParent
+
+    newel = taskElement$new(attributes = list(parallel=TRUE))
+    newsubts = lapply(dec$children, function(alt)
+{
+    taskElement$new(children = alt$children)
+})
+    newel$children = newsubts
+    parent[[pos]] <- newel
+   newel
+
+
+}

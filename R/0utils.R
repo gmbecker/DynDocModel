@@ -112,3 +112,9 @@ detailLevel = function(el)
         ret = el$attributes[["detail"]]
     ret
 }
+
+is_parallelTask = function(el)
+{
+    paral = dyndoc_attrs(el)$parallel
+    is_selfOrEl(el, "TaskElement") && !is.null(paral) && paral
+}

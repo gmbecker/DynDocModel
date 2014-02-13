@@ -12,7 +12,7 @@ getShape = function(element)
   }
 
 
-makeStructureGraph = function(doc, taskpalette = c("green", "lightgreen", "lightblue", "blue"), ...)
+makeStructureGraph = function(doc, taskpalette = c("green", "lightblue", "lightgreen",  "blue"), ...)
 {
 
         
@@ -92,7 +92,7 @@ if(FALSE)
               colors <<- c(colors, "white")
           
                                         #If the node has children, recursively draw its contents
-          if(is(element, "DecisionElement"))
+          if(is(element, "DecisionElement") )#|| is_parallelTask(element))
           {
                  #same parent for all branch children (side-by-side), we get this via branchparent = TRUE
               inds = unlist(sapply(element$children, .processElement, branchparent = TRUE))
@@ -117,12 +117,13 @@ if(FALSE)
               else 
 #                  parentlist <<- curcell
                   parentlist <<- ret
-              if(is(element, "TaskElement"))
-                  taskdepth <<- taskdepth - 1
               if (is(element, "BranchElement") && is_termBranch(element))
                   ret = -1
           }
-        
+if(is(element, "TaskElement"))
+    taskdepth <<- taskdepth - 1
+
+
           ret
       }
     
@@ -223,8 +224,8 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
           colors <<- c(colors, "white")
 
         #If the node has children, recursively draw its contents
-        if(is(element, "DecisionElement"))
-          {
+        if(is(element, "DecisionElement") || is_parallelTask(element))
+        {
             #same parent for all branch children (side-by-side), we get this via branchparent = TRUE
             inds = sapply(element$children, .processElement, branchparent = TRUE)
             inds = inds[inds>0]

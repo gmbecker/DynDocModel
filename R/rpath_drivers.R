@@ -44,7 +44,7 @@ dyndoc_rpath_abbrevs2 = function(obj)
 
 dyndoc_rpath_term = function(obj)
 {
-    length(dyndoc_rpath_abbrevs(obj)) > 1
+    length(dyndoc_rpath_abbrevs(obj)) ==0
 }
 
 
@@ -71,6 +71,13 @@ setMethod("dyndoc_attrs", "DocElement",
       })
 
 setMethod("dyndoc_attrs", "TextElement",
+          function(obj)
+      {
+          ret = c(obj$attributes, obj$formatSpecific, position = obj$posInParent, id = obj$id, content = obj$content)
+          as.list(ret)
+      })
+
+setMethod("dyndoc_attrs", "CodeElement",
           function(obj)
       {
           ret = c(obj$attributes, obj$formatSpecific, position = obj$posInParent, id = obj$id, content = obj$content)

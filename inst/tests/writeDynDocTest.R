@@ -26,7 +26,7 @@ writeDynDoc(doc = thr, file = "mdtestout.md", output.format = "md")
 thr2 = evalDynDoc(getThread(doc, start = doc[[1]], end = doc[[4]]))
 
 
-writeDynDoc(doc = thr2, file = "~/gabe/checkedout/ipython/ipynbtestout.ipynb", output.format = "ipynb")
+writeDynDoc(doc = thr2, file = "~/ipynbtestout.ipynb", output.format = "ipynb")
 
 
 library(RJSONIO)

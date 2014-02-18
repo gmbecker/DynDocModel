@@ -65,6 +65,9 @@ getDefaultInit = function(format)
         init = DefaultInit[[tolower(format)]]
     
     if(is.null(init))
-        stop(sprintf("no default output file initiation method found for format %s", tolower(format)))
+    {
+        warning(sprintf("no default output file initiation method found for format %s", tolower(format)))
+        init = function(...) character()
+    }
     init
 }

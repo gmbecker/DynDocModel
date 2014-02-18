@@ -72,8 +72,11 @@ getDefaultFinish = function(format)
     if(!is.null(format))
         finish = DefaultFinishers[[tolower(format)]]
     
-    if(is.null(finish))
-        stop(sprintf("no default output file finishing method found for format %s", tolower(format)))
+    if(is.null(finish)){
+        
+        warning(sprintf("no specific default  file finishing method found for format %s.", tolower(format)))
+       finish =  function(out, file, doc) cat(paste(out, collapse = "\n"), file = file)
+    }
     finish
 }
 

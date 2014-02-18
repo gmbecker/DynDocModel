@@ -19,7 +19,8 @@ getDefaultRenderer = function(format)
         rend = DefaultRenderers[[tolower(format)]]
     
     if(is.null(rend))
-        stop(sprintf("no default cell renderer found for format %s", tolower(format)))
+        
+        rend = function(...) stop(sprintf("no default element renderer found for format %s", tolower(format)))
     rend
 }
 

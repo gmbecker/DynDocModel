@@ -234,7 +234,10 @@ ipynbDoPNG = function(fout)
 {
     if(!(fout@info$format == "png"))
         stop("This image is not a png! other image formats are not yet supported")
-    base64encode(fout@value)
+    #base64encode(fout@value)
+    tfile = tempfile()
+    writeBin(fobject@value, tfile)
+    img(tfile)
 }
 
 ipynbMetadata = function(attrs)

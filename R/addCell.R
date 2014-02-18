@@ -57,6 +57,9 @@ getDefaultAddCell = function(format)
         ret = DefaultAddCells[[tolower(format)]]
 
         if(is.null(ret))
-            stop(sprintf("No default addCell function found for format %s", format))
+        {
+            warning(sprintf("No default addCell function found for format %s", format))
+            ret = function(outdoc, content) c(outdoc, content)
+        }
         ret
     }

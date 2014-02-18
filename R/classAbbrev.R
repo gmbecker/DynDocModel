@@ -25,6 +25,8 @@ abbrevToClass = function(types)
                   branchset = "DecisionElement",
                   any = "DocElement", #any should match all nodes
                   "*" = "DocElement",
+                  thread = "DocThread",
+                  document = "DynDoc",
                   ty #by default assume node type was not abbreviated
                   )
        })
@@ -52,6 +54,8 @@ classToAbbrev = function(classes)
                   AltMethodElement = "altmeth",
                   SectionElement = "sect",
                   DocElement = "*",
+                  DocThread = "thread",
+                  DynDoc = "document",
                   cl #by default assume node type was not abbreviated
                   )
        })
@@ -81,6 +85,8 @@ classToAbbrev2 = function(classes)
                   AltMethodElement = "alt",
                   SectionElement = "sect",
                   DocElement = "*",
+                  DocThread = "thread",
+                  DynDoc = "document",
                   cl #by default assume node type was not abbreviated
                   )
        })

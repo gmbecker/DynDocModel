@@ -4,6 +4,6 @@ formatObject = function(obj, formatters = list(), default = formatOutput)
             default = NULL
 
         meth = doListDispatch(class(obj), formatters, default = default)
-        meth(obj)
+        meth(obj, formatters=formatters)
 
     }

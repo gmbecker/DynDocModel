@@ -2,7 +2,7 @@ setGeneric("widgetToIPyNBList", function(widget) standardGeneric("widgetToIPyNBL
 
 setGeneric("runElement", function(el, evaluators, parent.env, formatters,  ...) standardGeneric("runElement"))
 
-setGeneric("formatOutput", function(object, ...) standardGeneric("formatOutput"))
+setGeneric("formatOutput", function(object, formatters = list(), ...) standardGeneric("formatOutput"))
 
 #setGeneric("getExtension", function(obj) standardGeneric("getExtension"))
 

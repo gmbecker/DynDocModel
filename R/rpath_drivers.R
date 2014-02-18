@@ -7,15 +7,9 @@ dyndoc_rpath = function(obj, path, names_fun = dyndoc_rpath_abbrevs, term_condit
 
 dyndoc_rpath_classes = function(obj)
 {
-
-    
-    
-    
-    if(is(obj, "DynDoc"))
+    if(any(sapply( c( "DynDoc", "DocInstance", "DocThread", "ContainerElement", "ElementInstance"), function(cl) is(obj, cl))))
         kids = obj$children
-    else if(any(sapply( c( "DocInstance", "DocThread", "ContainerElement", "ElementInstance"), function(cl) is(obj, cl))))
-        kids = obj$children
-    else if(is(obj, "ThreadList"))
+    else if(is(obj, "ThreadList") || is(obj, "ElementList"))
         return(sapply(obj, class))
     #for attributes/formatSpecific
     else if(is(obj, "list") || is(obj, "character"))

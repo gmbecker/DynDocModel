@@ -47,7 +47,8 @@ writeDynDoc = function(doc,
     state$basePlotName = paste(gsub("(.*)\\..*$", "\\1", basename(file)), "plot", sep="_")
     }
     out = init.output(file, doc)
- 
+    defRenderer = getDefaultRenderer(output.format)
+    
     foundRenderers = list()
     for (el in doc$children)
     {
@@ -60,15 +61,16 @@ writeDynDoc = function(doc,
         }
         
         if(is.function(cell.renderers))
-            rcell = cell.renderers(el, tmpformatters, state = state, converters = converters)
+            rcell = cell.renderers(el, renderers = list(all = cell.renderers), tmpformatters, state = state, converters = converters)
         else
         {
             if(class(el) %in% names(foundRenderers))
-                rcell = foundRenderers[[class(el)]](el, tmpformatters, state = state, converters = converters)
+                rcell = foundRenderers[[class(el)]](el, renderers = cell.renderers, formatters = tmpformatters, state = state, converters = converters)
             else
             {
-                meth = doListDispatch(class(el), cell.renderers)
-                rcell = meth(el, tmpformatters, state = state, converters = converters)
+               # meth = doListDispatch(class(el), cell.renderers)
+                meth = renderObject(el, renderers = cell.renderers, default = defRenderer, return.meth = TRUE)
+                rcell = meth(el, renderers = cell.renderers, formatters = tmpformatters, state = state, converters = converters)
                 foundRenderers[[class(el)]] = meth
             }
             

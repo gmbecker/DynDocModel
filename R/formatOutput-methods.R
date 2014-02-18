@@ -2,20 +2,20 @@
 if(require(XML))
   {
 setMethod("formatOutput", "XMLInternalNode",
-          function(object)
+          function(object, formatters = list())
           {
             new("FormattedOutput", value = saveXML(object), format = "xml")
           })
 
 setMethod("formatOutput", "XMLInternalDocument",
-          function(object)
+          function(object, formatters = list())
           {
             new("FormattedOutput", value = saveXML(object), format = "xml")
           })
 
 
 setMethod("formatOutput", "HTMLInternalDocument",
-          function(object)
+          function(object, formatters = list())
           {
             new("FormattedOutput", value = saveXML(object), format = "html")
           })
@@ -23,30 +23,30 @@ setMethod("formatOutput", "HTMLInternalDocument",
 
 
 setMethod("formatOutput", "ANY",
-          function(object)
+          function(object, formatters = list())
           {
               printed = capture.output(print(object))
               new("FormattedOutput", value = paste(printed, collapse="\n") , format = "text")
           })
 
 setMethod("formatOutput", "WithVisValue",
-          function(object)
+          function(object, formatters = list())
       {
           if(object@visible)
-              formatOutput(object@value)
+              formatObject(object@value, formatters=formatters)
           else
               new("FormattedOutput", value = character(), format = "null")
       })
 
 
 setMethod("formatOutput", "WithVisPlusGraphics",
-          function(object)
+          function(object, formatters = list())
       {
           if(object@visible)
-              val = formatOutput(object@value)
+              val = formatObject(object@value, formatters=formatters)
           else
               val = new("FormattedOutput", value = character(), format = "null")
-          graphics = lapply(object@graphics, formatOutput)
+          graphics = lapply(object@graphics, formatObject, formatters = formatters)
           if(length(graphics))
               val = c(graphics, val)
           if(!is(val, "list"))
@@ -55,13 +55,13 @@ setMethod("formatOutput", "WithVisPlusGraphics",
       })
 
 setMethod("formatOutput", "recordedplot",
-          function(object)
+          function(object, formatters = list())
           {
               .fimage(object, redrawPlot)
           })
 
 setMethod("formatOutput", "trellis",
-          function(object)
+          function(object, formatters = list())
           {
               .fimage(object)
           })
@@ -69,7 +69,7 @@ setMethod("formatOutput", "trellis",
 if(require(ggplot2))
     {
 setMethod("formatOutput", "ggplot",
-          function(object)
+          function(object, formatters = list())
           {
               .fimage(object)
           })
@@ -77,16 +77,16 @@ setMethod("formatOutput", "ggplot",
 
 
 setMethod("formatOutput", "PlotList",
-          function(object)
+          function(object, formatters = list())
       {
-          ret = lapply(object, formatOutput)
+          ret = lapply(object, formatObject, formatters = formatters)
           as(ret, "FormattedOutputList")
       })
 
 setMethod("formatOutput", "OutputList",
-          function(object)
+          function(object, formatters = list())
       {
-          ret = lapply(object, formatOutput)
+          ret = lapply(object, formatObject, formatters = formatters)
           as(ret, "FormattedOutputList")
       })
 

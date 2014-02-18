@@ -129,6 +129,7 @@ mdHandleFormatted = function(fout, inline, state)
     switch(fout@format,
            image_data = doImage(fout, state = state),
            null = character(),
+           html = fout@value,
            if(length(fout@value)) paste0(bumper, fout@value, bumper) else character()
            )
 }

@@ -1,3 +1,18 @@
+#A wrapper for Wickham (and Xie)'s evaluator. This captures graphics, warnings, and errors.
+#evaluator also captures the code being evaluated and intersperses it, but currently that is now how we construct output files, so we remove those elements in post
+if(require(evaluate))
+{
+    dyndoc_evaluate = function(code, env, ...)
+    {
+        ret = evaluate(code, env, output_handler = new_output_handler(value = function(x, vis) new("WithVisValue", value = x, visible = vis)))
+        #remove echos of the code. We don't want this to show up twice, and right now it would
+        ret = ret[sapply(ret, function(x) all(class(x) != "source"))]
+        as(ret, "OutputList")
+    }
+}
+
+
+
 setGeneric("evalDynDoc", function(obj, eval = evalWithCache, env = obj$envir,  value = FALSE, ...) standardGeneric("evalDynDoc"))
 
 #what should evalDynDoc return? we need an option to get the actual return/final value but it seems like the machinery works better if it returns the document element
@@ -32,7 +47,8 @@ setMethod("evalDynDoc", "ElementInstance",
                   {
                       for(nd in obj$children)
                           {
-                              res = evalDynDoc(nd, eval, env,value = TRUE, ...)
+                              res = evalDynDoc(nd, eval=eval, env,value = TRUE, ...)
+
                             
                               #only instances of code elements get output!
                               if(is(nd$element, "CodeElement"))
@@ -45,7 +61,7 @@ setMethod("evalDynDoc", "ElementInstance",
                               }
                           }
                       if(value)
-                          return(res)
+                          return(nd$outputs)
                       else
                           return(obj)
                   }

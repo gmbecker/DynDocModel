@@ -96,13 +96,18 @@ rawToDB = function(txt)
     
 }
 
-converters = list(default = pandoc_convert, raw = list(docbook = rawToDB))
+default_converters = list(default = pandoc_convert, raw = list(docbook = rawToDB))
 
-convertContent = function(content, in_format, out_format, converters = converters)
+convertContent = function(content, in_format, out_format, converters = default_converters)
 {
+    #specific formatter from in_format to out_format
     if(!is.null(converters[[in_format]]) && !is.null(converters[[in_format]][[out_format]]))
         cfun = converters[[in_format]][[out_format]]
-    else if (!is.null(converters[[in_format]]) && !is.null(converters[["default"]]))
+    #specialized default for in_format
+    else if (!is.null(converters[[in_format]]) && !is.null(converters[[in_format]][["default"]]))
+        cfun = converters[[in_format]][["default"]]
+    #overall default specified in list
+    else if (!is.null(converters[["default"]]))
         cfun = converters[["default"]]
     else
         cfun = pandoc_convert

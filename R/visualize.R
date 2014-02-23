@@ -117,7 +117,7 @@ if(FALSE)
               else 
 #                  parentlist <<- curcell
                   parentlist <<- ret
-              if (is(element, "BranchElement") && is_termBranch(element))
+              if (is(element, "AltElement") && is_termBranch(element))
                   ret = -1
           }
 if(is(element, "TaskElement"))
@@ -263,7 +263,7 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
             
             if(is(element, "TaskElement"))
               taskdepth <<- taskdepth - 1
-            if (is(element, "BranchElement") && is_termBranch(element))
+            if (is(element, "AltElement") && is_termBranch(element))
                 ret = -1
             else
                 ret = curcell

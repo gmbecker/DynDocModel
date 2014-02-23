@@ -135,7 +135,7 @@ setMethod("renderCellIPyNB", "DecisionElement",
               listout
           })
 
-setMethod("renderCellIPyNB", "BranchElement",
+setMethod("renderCellIPyNB", "AltElement",
           function(node, formatters, ...)
           {
               if(!is.null(node$formatSpecific) && !is.null(node$formatSpecific$ipynb))
@@ -208,7 +208,7 @@ setMethod("renderCellIPyNB", "ElementInstance",
 
 setMethod("getIPyCellType", "TaskElement", function(el) "task")
 setMethod("getIPyCellType", "DecisionElement", function(el) "altset")
-setMethod("getIPyCellType", "BranchElement", function(el) "alt")
+setMethod("getIPyCellType", "AltElement", function(el) "alt")
 setMethod("getIPyCellType", "TextElement", function(el) "raw")
 setMethod("getIPyCellType", "MDTextElement", function(el) "markdown")
 setMethod("getIPyCellType", "DbTextElement", function(el) stop("translation of Docbook into markdown/raw text not yet implemented"))

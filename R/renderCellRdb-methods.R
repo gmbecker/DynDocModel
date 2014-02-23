@@ -122,7 +122,7 @@ dbDoImage = function(fobject, state, code)
 
 setMethod("getRdbTag", "TaskElement", function(el) "task")
 setMethod("getRdbTag", "DecisionElement", function(el) "decision")
-setMethod("getRdbTag", "BranchElement", function(el) "alternative")
+setMethod("getRdbTag", "AltElement", function(el) "alternative")
 setMethod("getRdbTag", "AltImplElement", function(el) "altImplementation")
 setMethod("getRdbTag", "AltMethodElement", function(el) "altApproach")
 setMethod("getRdbTag", "AltImplSetElement", function(el) "altImplementations")

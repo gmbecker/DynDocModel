@@ -145,7 +145,7 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE, cacheEngine = e
 #returns the correct alternative element in $target and the indexes of the remaining (unused) branch instructions in $instrKeep
 getBranchTarget = function(dec, branchInstr)
 {
-        if(is(branchInstr, "BranchElement"))
+        if(is(branchInstr, "AltElement"))
             branchInstr = list(branchInstr)
 
         indexes = seq(along = branchInstr)

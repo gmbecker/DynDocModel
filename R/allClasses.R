@@ -10,12 +10,14 @@ setClass("FormattedOutputList", contains = "list", valid = function(object) all(
 
 
 setClass("WidgetsList", contains="list")
+setClass("WidgetBase", contains="VIRTUAL")
 setClass("IWidget", representation(var = "character",
                                         #I think we want to specify widget by class, but I'll leave this here for custom widgets?
-                                   widget = "character",
+#                                   widget = "character",
                                    linenum = "integer",
                                    default = "ANY",
-                                   additional.info = "list"))
+                                   additional.info = "list"),
+         contains = "WidgetBase")
 
 setClass("IWidgetSlider", representation(range = "numeric",
                                          step = "numeric"),
@@ -412,15 +414,15 @@ mixedLatexElement = setRefClass("MixedLatexElement", contains = "MixedTextElemen
 
 
 
-branchElement = setRefClass("BranchElement", contains = "ContainerElement")
+branchElement = setRefClass("AltElement", contains = "ContainerElement")
 
 branchSetElement = setRefClass("DecisionElement", contains = "ContainerElement")
-altImplElement = setRefClass("AltImplElement", contains = "BranchElement")
+altImplElement = setRefClass("AltImplElement", contains = "AltElement")
 altImplSetElement = setRefClass("AltImplSetElement", contains = "DecisionElement")
 
-altMethodElement = setRefClass("AltMethodElement", contains = "BranchElement")
+altMethodElement = setRefClass("AltMethodElement", contains = "AltElement")
 altMethodSetElement = setRefClass("AltMethodSetElement", contains = "DecisionElement")
-altQuestElement = setRefClass("AltQuestElement", contains = "BranchElement")
+altQuestElement = setRefClass("AltQuestElement", contains = "AltElement")
 altQuestSetElement = setRefClass("AltQuestSetElement", contains = "DecisionElement")
 
 sectElement = setRefClass("SectionElement", contains = "ContainerElement",
@@ -533,7 +535,6 @@ setRefClass("DocInstance",
                         env = envir
                     args = list(...)
                     if(missing(cacheEngine)) {
-                        browser()
                         if("parentDoc" %in% names(args))
                             cEngine = args$parentDoc$cacheEngine
                         else

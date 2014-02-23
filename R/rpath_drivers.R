@@ -88,6 +88,9 @@ setMethod("dyndoc_attrs", "ElementInstance",
           as.list(ret)
       })
 
+setMethod("dyndoc_attrs", "rpath_match",
+          function(obj) dyndoc_attrs(obj@value))
+
 setMethod("dyndoc_attrs", "ANY", function(obj) list())
 
     

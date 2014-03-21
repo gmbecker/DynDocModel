@@ -60,7 +60,7 @@ combineFormatters = function(fl1, fl2)
 is_termBranch = function(br)
 {
     attrs = dyndoc_attrs(br)
-    if("terminal" %in% names(attrs) && attrs[["terminal"]])
+    if("terminal" %in% names(attrs) && as.logical(attrs[["terminal"]]))
         TRUE
     else
         FALSE
@@ -118,3 +118,14 @@ is_parallelTask = function(el)
     paral = dyndoc_attrs(el)$parallel
     is_selfOrEl(el, "TaskElement") && !is.null(paral) && paral
 }
+
+getId = function(el)
+{
+    ret = ""
+    if(length(el$id))
+        ret = el$id
+    else if (length(el$attributes) && length(el$attributes$id))
+        ret = el$attributes$id
+    ret
+}
+        

@@ -60,14 +60,12 @@ decisionToParTask = function(dec)
     parent = dec$parent
     pos = dec$posInParent
 
-    newel = taskElement$new(attributes = list(parallel=TRUE))
+    newel = taskElement$new(attributes = c(list(parallel=TRUE), dec$attributes))
     newsubts = lapply(dec$children, function(alt)
-{
-    taskElement$new(children = alt$children)
-})
+    {
+        taskElement$new(children = alt$children, attributes = alt$attributes)
+    })
     newel$children = newsubts
     parent[[pos]] <- newel
-   newel
-
-
+    newel
 }

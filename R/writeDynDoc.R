@@ -70,7 +70,7 @@ writeDynDoc = function(doc,
             else
             {
                # meth = doListDispatch(class(el), cell.renderers)
-                meth = renderObject(el, renderers = cell.renderers, default = defRenderer, return.meth = TRUE)
+                meth = renderElement(el, renderers = cell.renderers, default = defRenderer, return.meth = TRUE)
                 rcell = meth(el, renderers = cell.renderers, formatters = tmpformatters, state = state, converters = converters)
                 foundRenderers[[class(el)]] = meth
             }

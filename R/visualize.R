@@ -8,7 +8,7 @@ getShape = function(element)
     else if (is(element, "ContainerElement"))
       "rectangle"
     else
-      "circle"
+      "ellipse"
   }
 
 
@@ -17,13 +17,14 @@ makeStructureGraph = function(doc, taskpalette = c("green", "lightblue", "lightg
 
         
     curcell = 2
-    graphlist = list(list(edgets=list()))
+    graphlist = list(list(edges=numeric()))
     level = 1
     parentlist = 1
     branchstart = numeric()
-    shapes = "circle"
+    shapes = "ellipse"
     taskdepth = 0
     colors = character()
+    labels = "start"
     detail_levels = data.frame(lastcell = curcell, level = 1)
     lastlev = 1
 
@@ -44,6 +45,7 @@ makeStructureGraph = function(doc, taskpalette = c("green", "lightblue", "lightg
        # ret = curcell
           graphlist[[curcell]] <<- list(edges = numeric())
           shapes[curcell] <<- getShape(element)
+          labels[curcell] <<- getId(element)
           for(i in parentlist)
               graphlist[[i]]$edges <<- c(graphlist[[i]]$edges, curcell)
           
@@ -127,26 +129,39 @@ if(is(element, "TaskElement"))
           ret
       }
     
-
-
-    
     for(el in doc$children)
       .processElement(el)
 graphlist[[curcell]] = list(edges = numeric())
-    shapes = c(shapes, "circle")
+    shapes = c(shapes, "ellipse")
 colors = c("white", colors, "white")
+labels = c( labels, "end")
 for(i in parentlist)
     graphlist[[i]]$edges = c(graphlist[[i]]$edges, curcell)
 
-nms = as.character(seq(along=graphlist))
+#nms = as.character(seq(along=graphlist))
+nms = labels
+inds = nchar(nms)==0
+nms[inds] = as.character(seq(along=graphlist))[inds]
     names(graphlist) = nms
     names(shapes) = nms
     names(colors) = nms
     ret = graphNEL(nodes = names(graphlist), edgeL = graphlist, edgemode = "directed")
+#    widths = rep(max(1*nchar(nms)), times=length(nms))
+    widths = 140 + 120*(nchar(nms)/max(nchar(nms)))
+    heights = ifelse(shapes %in% c("diamond", "triangle"), 250, 160)
+    #fixed = rep(FALSE, times=length(nms))
+fixed = rep(TRUE, times=length(nms))
+    names(widths) = nms
+    cex = rep(.7 +.05*(max(nchar(nms)) - nchar(nms)), times = length(nms))
+names(cex) = nms
+fontsize = 15 + 15*(1-nchar(nms)/max(nchar(nms)))
+names(fontsize) = nms
 #    nodeRenderInfo(ret) = list(shape = shapes, fill="red")
 
-    lout = layoutGraph(ret)
-    nodeRenderInfo(lout) = list(shape = shapes, fill=colors)
+  # lout = layoutGraph(ret, nodeAttrs = list(width=widths))
+ lout = layoutGraph(ret)#, nodeAttrs = list(width=widths))
+ #lout = layoutGraph(ret, nodeAttrs = list(fontsize = fontsize))
+    nodeRenderInfo(lout) = list(shape = shapes, fill=colors, fontsize=fontsize, lWidth=widths/2, rWidth=widths/2, height=heights)# cex = cex)#, fixedsize=fixed)
     renderGraph(lout)
     lout
     
@@ -283,11 +298,16 @@ makeDocumentGraph = function(doc, taskpalette = c("green", "lightgreen", "lightb
     names(graphlist) = nms
     names(shapes) = nms
     names(colors) = nms
-    ret = graphNEL(nodes = names(graphlist), edgeL = graphlist, edgemode = "directed")
-#    nodeRenderInfo(ret) = list(shape = shapes, fill="red")
+    fx = rep(FALSE, times = length(nms))
+    names(fx) = nms
+    fsize = rep(10, times = length(nms))
+    names(fsize) = nms
+    widths = .2* 
+    ret = graphnel(nodes = names(graphlist), edgel = graphlist, edgemode = "directed")
+#    noderenderinfo(ret) = list(shape = shapes, fill="red")
 
-    lout = layoutGraph(ret)
-    nodeRenderInfo(lout) = list(shape = shapes, fill=colors)
+    lout = layoutgraph(ret)
+    noderenderinfo(lout) = list(shape = shapes, fill=colors, fixedsize = fx, cex = fsize)
     renderGraph(lout)
     lout
     

@@ -133,8 +133,11 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE, cacheEngine = e
         targ = getBranchTarget(el, branchInstr)
         ret = makeInstance(targ$target, doKids = TRUE, branchInstr = branchInstr[targ$keepInstr], cacheEngine = cacheEngine, ...)
         
-    } else { #not a decision element
-        ret = new("ElementInstance", element = el, doChildren = TRUE, cacheEngine = cacheEngine, branchInstr = branchInstr, ...)
+    } else if (is(el, "ContainerElement")) {
+        kids = sapply(el$children, makeInstance, doKids = FALSE, branchInstr = branchInstr, cacheEngine = cacheEngine, ...)
+        ret = new("ElementInstance", doChildren=FALSE, cachingEngine = cachingEnging, element = el, children = kids)
+    { #not a decision element
+        ret = new("ElementInstance", element = el, doChildren = FALSE, cacheEngine = cacheEngine, branchInstr = branchInstr, ...)
     }
     
     ret
@@ -298,6 +301,7 @@ getFreeDecs = function(doc, start, end, detail_level, branches = NULL, cache, ch
         alldecs = remAncestors(alldecs, alldecs[[j]])
     }
 
+    
     alldecs
 
 }

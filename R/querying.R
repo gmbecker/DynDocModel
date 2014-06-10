@@ -23,7 +23,62 @@ getThread <- function(doc,
     
 }
 
-findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = TRUE, cacheEngine = doc$cacheEngine, detail_level = 1, decisions_only = FALSE, ...)
+findPath = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = TRUE, cacheEngine = doc$cacheEngine, detail_level = 1, ...)
+{
+    curlev = list()
+    curel = end
+    
+    while(!sameElement(start, curel))
+    {
+# inst = makeInstance(curel, doKids = FALSE, branchInstr = visit)
+        if(detailLevel(curel) <= detail_level)
+            inst = makeInstance(curel, branchInstr = visit, doKids = TRUE, cacheEngine = cacheEngine)
+        else
+            inst = NULL
+        
+        sibs = getSiblings(curel, posType = "before")
+        if(length(sibs))
+        {
+            curel = sibs[[length(sibs)]]
+            curlev = c(inst, curlev)
+        } else {
+            if(!is(curel$parent, "DynDoc"))
+            {
+                curel = curel$parent
+                if(detailLevel(curel) <= detail_level)
+                {
+                    inst$children = curlev
+                
+                    curlev = list(inst)
+                } else
+                    curlev = list()
+            } else {
+                if(stop_on_fail)
+                    stop("Unable to determine path between start and end elements")
+                else
+                    return(NULL)
+            }
+        }
+    }
+    
+    curlev= c(start, curlev)
+    
+    if(check_valid)
+    {
+        terms = sapply(curlev[-length(curlev)], function(x) is_termBranch(x))
+        if(any(terms))
+        {
+            if(stop_on_fail)
+                stop("Detected path passes through a terminal branch.")
+            else
+                return(NULL)
+        }
+    }
+
+    new("DocThread", children = curlev, parentDoc = doc, cacheEngine = cacheEngine, ...)
+}
+
+findPathbroken = function(doc, start, end, visit, stop_on_fail = TRUE, check_valid = TRUE, cacheEngine = doc$cacheEngine, detail_level = 1,  ...)
 {
     curlev = list()
     curel = end
@@ -133,11 +188,8 @@ makeInstance = function(el, branchInstr = list(), doKids = TRUE, cacheEngine = e
         targ = getBranchTarget(el, branchInstr)
         ret = makeInstance(targ$target, doKids = TRUE, branchInstr = branchInstr[targ$keepInstr], cacheEngine = cacheEngine, ...)
         
-    } else if (is(el, "ContainerElement")) {
-        kids = sapply(el$children, makeInstance, doKids = FALSE, branchInstr = branchInstr, cacheEngine = cacheEngine, ...)
-        ret = new("ElementInstance", doChildren=FALSE, cachingEngine = cachingEnging, element = el, children = kids)
-    { #not a decision element
-        ret = new("ElementInstance", element = el, doChildren = FALSE, cacheEngine = cacheEngine, branchInstr = branchInstr, ...)
+    } else { #not a decision element
+        ret = new("ElementInstance", element = el, doChildren = TRUE, cacheEngine = cacheEngine, branchInstr = branchInstr, ...)
     }
     
     ret
@@ -282,11 +334,15 @@ getAllThreads = function(doc, start = 1, end = length(doc$children), detail_leve
 getFreeDecs = function(doc, start, end, detail_level, branches = NULL, cache, check_valid, ...)
 {
     
-    alldecs = findPath(doc, start, end, visit = branches, check_valid = check_valid, cacheEngine = cache, detail_level = detail_level, decisions_only = TRUE, ...)
+#    alldecs = findPath(doc, start, end, visit = branches, check_valid = check_valid, cacheEngine = cache, detail_level = detail_level,  ...)
 
+    
     #the above returns the branches currently. Annoyiinng
-    alldecs = sapply(alldecs, function(x) x$parent)
 
+    #alldecs = sapply(alldecs, function(x) x$parent)
+
+    alldecs = getFirstBranchings(doc, detail_level = detail_level)
+    alldecs = alldecs[sapply(alldecs, function(x) sum(!sapply(x$children, is_termBranch)) > 1)]
     #decisions which are direct ancestors of the specified end element are not "free", because we have to choose a specific set o alternatives to arrive at end.
     #identify and remove decisions which are fixed due to branch or endpoint instructions
     branches = c(branches, end)
@@ -301,7 +357,6 @@ getFreeDecs = function(doc, start, end, detail_level, branches = NULL, cache, ch
         alldecs = remAncestors(alldecs, alldecs[[j]])
     }
 
-    
     alldecs
 
 }

@@ -130,6 +130,7 @@ mdHandleFormatted = function(fout, inline, state)
            image_data = doImage(fout, state = state),
            null = character(),
            html = fout@value,
+           plot = doPlot(fout, state = state),
            if(length(fout@value)) paste0(bumper, fout@value, bumper) else character()
            )
 }
@@ -156,3 +157,11 @@ doImage = function(fobject, state, dataURI = FALSE)
     }
  
 }
+
+doPlot <-  function(obj, state, dataURI=FALSE)
+{
+    idat = .fimagedata(obj@value, obj@info$disp_fun, obj@info$dev)
+    doImage(idat, state = state, dataURI = dataURI)
+}
+
+    

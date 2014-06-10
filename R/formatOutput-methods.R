@@ -97,12 +97,19 @@ setMethod("formatOutput", "OutputList",
 #            new("FormattedOutput", value = character(), format = "text")
 #          })
 
-.fimage <- function(obj, disp_fun = print)
+.fimagedata <- function(obj, disp_fun = print, dev = "png")
 {
-    tpng = tempfile(fileext="png")
-    png(tpng)
+    dev_fun = get(dev)
+    
+    tpng = tempfile(fileext=dev)
+    dev_fun(tpng)
     disp_fun(obj)
     dev.off()
     stuff = readBin(tpng, raw(), n = file.info(tpng)$size)
-    new("FormattedOutput", format="image_data", value=stuff, info = list(format = "png"))
+    stuff
 }    
+
+.fimage <-  function(obj, disp_fun, dev = "png") {
+    new("FormattedOutput", format="plot", value = obj, info = list(disp_fun = disp_fun, dev = dev))
+}
+

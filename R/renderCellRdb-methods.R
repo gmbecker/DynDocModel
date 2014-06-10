@@ -91,6 +91,7 @@ RdbHandleFormatted = function(fout, inline, state, node)
         return(unlist(sapply(fout, RdbHandleFormatted, inline = inline, state = state, node)))
     switch(fout@format,
            image_data = dbDoImage(fout, state = state, node),
+           plot = dbDoPlot(fout, state, node),
            null = NULL,
            if(length(fout@value)) newXMLNode("r:output", fout@value, cdata=TRUE, parent = node))
     NULL
@@ -116,6 +117,11 @@ dbDoImage = function(fobject, state, code)
     newXMLNode("r:output", newXMLNode("mediaobject", newXMLNode(imageobject, newXMLNode("imagedata", attrs = list(fileref = fname, format = fobject@info$format)))), parent = code)
     #xml nodes so the changes happen in place.
     NULL
+}
+
+dbDoPlot <-  function(fout, state, code) {
+    fdat = .fimagedata(fout, fout@info$disp_fun, fout@info$dev)
+    dbDoImage(fdat, state = state, code = code)
 }
 
 
